@@ -235,7 +235,7 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
         if ( with != null ) {
             // XEP-0313 specifies: If (and only if) the supplied JID is a bare JID (i.e. no resource is present), then the server
             // SHOULD return messages if their bare to/from address for a user archive, or from address otherwise, would match it.
-            // TODO using a 'LIKE' query is unlikely to perform well on large data sets. Fix this with an additional column or index (which could also utilize Lucene, perhaps).
+            // TODO using a 'LIKE' query is unlikely to perform well on large data sets. Fix this with an additional column or index (which could also utilize OpenSearch, perhaps).
             if (with.getResource() == null) {
                 sql += " AND sender LIKE ? ";
             } else {

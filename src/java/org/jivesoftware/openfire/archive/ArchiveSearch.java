@@ -73,9 +73,7 @@ public class ArchiveSearch {
 
     /**
      * Returns the query string used for the search or <tt>null</tt> if no query string
-     * has been set. The query String can contain the full
-     * <a href="http://lucene.apache.org/java/docs/queryparsersyntax.html">search syntax</a>
-     * supported by Lucene.
+     * has been set. Keywords are matched against conversation text in the OpenSearch index.
      *
      * @return the query string or <tt>null</tt> if no query string has been set.
      */
@@ -85,9 +83,7 @@ public class ArchiveSearch {
 
     /**
      * Sets the query string used for the search, which can be <tt>null</tt> to indicate that
-     * no query string should be used. The query String can contain the full
-     * <a href="http://lucene.apache.org/java/docs/queryparsersyntax.html">search syntax</a>
-     * supported by Lucene.
+     * no query string should be used. Keywords are matched against conversation text in the OpenSearch index.
      *
      * @param queryString the query string or <tt>null</tt> if no query string should be used.
      */

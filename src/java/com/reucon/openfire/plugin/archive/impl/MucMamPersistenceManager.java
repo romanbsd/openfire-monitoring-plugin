@@ -2,7 +2,6 @@ package com.reucon.openfire.plugin.archive.impl;
 
 import com.reucon.openfire.plugin.archive.PersistenceManager;
 import com.reucon.openfire.plugin.archive.model.ArchivedMessage;
-import com.reucon.openfire.plugin.archive.model.Conversation;
 import com.reucon.openfire.plugin.archive.xep0059.XmppResultSet;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -10,7 +9,7 @@ import org.dom4j.DocumentHelper;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.MonitoringConstants;
-import org.jivesoftware.openfire.index.LuceneIndexer;
+import org.jivesoftware.openfire.index.OpenSearchIndexer;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.openfire.muc.MultiUserChatManager;
 import org.jivesoftware.openfire.muc.MultiUserChatService;
@@ -48,11 +47,6 @@ public class MucMamPersistenceManager implements PersistenceManager {
     private static final int DEFAULT_MAX = 100;
 
     @Override
-    public Collection<Conversation> findConversations(Date startDate, Date endDate, JID owner, JID with, XmppResultSet xmppResultSet) {
-        throw new UnsupportedOperationException("MAM-MUC cannot perform this operation");
-    }
-
-    @Override
     public Collection<ArchivedMessage> findMessages(Date startDate, Date endDate, JID archiveOwner, JID with, String query, XmppResultSet xmppResultSet, boolean useStableID ) throws NotFoundException, DataRetrievalException {
         Log.debug( "Finding messages in archive '{}' with start date '{}', end date '{}' with '{}', query: '{}' and resultset '{}', useStableId '{}'.", archiveOwner, startDate, endDate, with, query, xmppResultSet, useStableID );
         final MultiUserChatManager manager = XMPPServer.getInstance().getMultiUserChatManager();
@@ -81,29 +75,29 @@ public class MucMamPersistenceManager implements PersistenceManager {
         final List<ArchivedMessage> msgs;
         final int totalCount;
         if ( query != null && !query.isEmpty() ) {
-            if (!LuceneIndexer.ENABLED.getValue()) {
+            if (!OpenSearchIndexer.isSearchEnabled()) {
                 throw new DataRetrievalException("Unable to process a search request that contains a text-based query, as the full-text index functionality has been disabled by configuration.");
             }
-            // When there's a 'query' element, the search needs to go through a Lucene index (which takes care of text-search).
+            // When there's a 'query' element, the search needs to go through the OpenSearch index (which takes care of text-search).
             if (USE_OPENFIRE_TABLES.getValue()) {
                 Log.debug("Using Openfire tables");
-                final PaginatedMucMessageFromOpenfireLuceneQuery paginatedMucMessageLuceneQuery = new PaginatedMucMessageFromOpenfireLuceneQuery(startDate, endDate, room, with, query);
-                Log.debug("Request for message archive of room '{}' resulted in the following query data: {}", room.getJID(), paginatedMucMessageLuceneQuery);
-                totalCount = paginatedMucMessageLuceneQuery.getTotalCount();
+                final PaginatedMucMessageFromOpenfireOpenSearchQuery paginatedMucMessageOpenSearchQuery = new PaginatedMucMessageFromOpenfireOpenSearchQuery(startDate, endDate, room, with, query);
+                Log.debug("Request for message archive of room '{}' resulted in the following query data: {}", room.getJID(), paginatedMucMessageOpenSearchQuery);
+                totalCount = paginatedMucMessageOpenSearchQuery.getTotalCount();
                 if (totalCount == 0) {
                     msgs = Collections.emptyList();
                 } else {
-                    msgs = paginatedMucMessageLuceneQuery.getPage(after, before, maxResults, isPagingBackwards);
+                    msgs = paginatedMucMessageOpenSearchQuery.getPage(after, before, maxResults, isPagingBackwards);
                 }
             } else {
                 Log.debug("Using Monitoring plugin tables");
-                final PaginatedMucMessageLuceneQuery paginatedMucMessageLuceneQuery = new PaginatedMucMessageLuceneQuery(startDate, endDate, room, with, query);
-                Log.debug("Request for message archive of room '{}' resulted in the following query data: {}", room.getJID(), paginatedMucMessageLuceneQuery);
-                totalCount = paginatedMucMessageLuceneQuery.getTotalCount();
+                final PaginatedMucMessageOpenSearchQuery paginatedMucMessageOpenSearchQuery = new PaginatedMucMessageOpenSearchQuery(startDate, endDate, room, with, query);
+                Log.debug("Request for message archive of room '{}' resulted in the following query data: {}", room.getJID(), paginatedMucMessageOpenSearchQuery);
+                totalCount = paginatedMucMessageOpenSearchQuery.getTotalCount();
                 if (totalCount == 0) {
                     msgs = Collections.emptyList();
                 } else {
-                    msgs = paginatedMucMessageLuceneQuery.getPage(after, before, maxResults, isPagingBackwards);
+                    msgs = paginatedMucMessageOpenSearchQuery.getPage(after, before, maxResults, isPagingBackwards);
                 }
             }
         } else {
@@ -169,11 +163,16 @@ public class MucMamPersistenceManager implements PersistenceManager {
             final List<ArchivedMessage> nextPage;
             if ( query != null && !query.isEmpty() )
             {
-                if (!LuceneIndexer.ENABLED.getValue()) {
+                if (!OpenSearchIndexer.isSearchEnabled()) {
                     throw new DataRetrievalException("Unable to process a search request that contains a text-based query, as the full-text index functionality has been disabled by configuration.");
                 }
-                final PaginatedMucMessageFromOpenfireLuceneQuery paginatedMucMessageLuceneQuery = new PaginatedMucMessageFromOpenfireLuceneQuery(startDate, endDate, room, with, query);
-                nextPage = paginatedMucMessageLuceneQuery.getPage(afterForNextPage, beforeForNextPage, 1, isPagingBackwards);
+                if (USE_OPENFIRE_TABLES.getValue()) {
+                    final PaginatedMucMessageFromOpenfireOpenSearchQuery paginatedMucMessageOpenSearchQuery = new PaginatedMucMessageFromOpenfireOpenSearchQuery(startDate, endDate, room, with, query);
+                    nextPage = paginatedMucMessageOpenSearchQuery.getPage(afterForNextPage, beforeForNextPage, 1, isPagingBackwards);
+                } else {
+                    final PaginatedMucMessageOpenSearchQuery paginatedMucMessageOpenSearchQuery = new PaginatedMucMessageOpenSearchQuery(startDate, endDate, room, with, query);
+                    nextPage = paginatedMucMessageOpenSearchQuery.getPage(afterForNextPage, beforeForNextPage, 1, isPagingBackwards);
+                }
             }
             else
             {
@@ -379,11 +378,6 @@ public class MucMamPersistenceManager implements PersistenceManager {
 
         Log.debug( "Unable to find ID of the message with stable/unique stanza ID {}", value );
         return null;
-    }
-
-    @Override
-    public Conversation getConversation(JID owner, JID with, Date start) {
-        throw new UnsupportedOperationException("MAM-MUC cannot perform this operation");
     }
 
     public static Instant getDateOfFirstLog( MUCRoom room )

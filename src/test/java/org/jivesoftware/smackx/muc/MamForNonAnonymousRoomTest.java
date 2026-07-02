@@ -58,7 +58,7 @@ public class MamForNonAnonymousRoomTest extends AbstractMamTest
     /**
      * Verifies that querying the MUC archive with a text filter returns the appropriate public messages.
      */
-    // FIXME this test currently fails because the Lucene index takes a few seconds to update, which means that the query doesn't find the keyword yet. @SmackIntegrationTest
+    // FIXME this test currently fails because the OpenSearch index takes a few seconds to update, which means that the query doesn't find the keyword yet. @SmackIntegrationTest
     @Override // Sadly, the SINT test framework requires a method in the child class. Working around code duplication using this override that delegates to the parent class.
     public void testMucMamContainsPublicMessagesTextFilter() throws Exception
     {

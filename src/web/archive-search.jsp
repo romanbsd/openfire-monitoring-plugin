@@ -12,7 +12,7 @@
 <%@ page import="org.slf4j.LoggerFactory" %>
 <%@ page import="org.jivesoftware.openfire.archive.*" %>
 <%@ page import="org.jivesoftware.openfire.cluster.ClusterManager" %>
-<%@ page import="org.jivesoftware.openfire.index.LuceneIndexer" %>
+<%@ page import="org.jivesoftware.openfire.index.OpenSearchIndexer" %>
 
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
@@ -567,7 +567,7 @@
 
 
 </td>
-<% if (LuceneIndexer.ENABLED.getValue()) { %>
+<% if (OpenSearchIndexer.isSearchEnabled()) { %>
 <td width="0" height="100%" valign="middle">
     <div class="verticalrule"></div>
 </td>

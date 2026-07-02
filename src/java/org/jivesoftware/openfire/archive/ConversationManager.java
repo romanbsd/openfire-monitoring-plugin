@@ -924,7 +924,7 @@ public class ConversationManager implements ComponentEventListener{
 
     /**
      * Removes all recorded data for a particular chat room, including messages, participants and conversations from the
-     * database, and associated data from the Lucene indices.
+     * database, and associated data from the OpenSearch indices.
      *
      * @param roomID the numeric ID for the room
      * @param roomJid the JID of the room

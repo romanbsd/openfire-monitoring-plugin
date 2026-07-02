@@ -35,7 +35,7 @@ public class RESTExceptionMapper implements ExceptionMapper<ServiceException> {
         errorResponse.setResource(exception.getResource());
         errorResponse.setMessage(exception.getMessage());
         errorResponse.setException(exception.getException());
-        LOG.error("{}: {} with resource {}", exception.getException(), exception.getMessage(), exception.getResource(), exception.getException());
+        LOG.error("{}: {} with resource {}", exception.getException(), exception.getMessage(), exception.getResource());
         return Response.status(exception.getStatus()).entity(errorResponse).type(MediaType.APPLICATION_XML).build();
     }
 

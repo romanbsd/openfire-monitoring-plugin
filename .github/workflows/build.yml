@@ -98,7 +98,7 @@ jobs:
           domain: 'example.org'
           adminAccountUsername: 'admin'
           adminAccountPassword: 'admin'
-          enabledSpecifications: 'XEP-0136,XEP-0313'
+          enabledSpecifications: 'XEP-0313'
           extensionJar: ${{ needs.build.outputs.id }}-integration-tests.jar
           javaVersion: ${{ matrix.java }}
 

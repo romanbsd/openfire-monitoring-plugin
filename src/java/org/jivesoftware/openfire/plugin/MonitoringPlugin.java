@@ -36,6 +36,7 @@ import org.jivesoftware.openfire.container.Plugin;
 import org.jivesoftware.openfire.container.PluginListener;
 import org.jivesoftware.openfire.container.PluginManager;
 import org.jivesoftware.openfire.http.HttpBindManager;
+import org.jivesoftware.openfire.index.OpenSearchClientHolder;
 import org.jivesoftware.openfire.reporting.graph.GraphEngine;
 import org.jivesoftware.openfire.reporting.stats.DefaultStatsViewer;
 import org.jivesoftware.openfire.reporting.stats.MockStatsViewer;
@@ -47,7 +48,6 @@ import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.SystemProperty;
 
 import com.reucon.openfire.plugin.archive.PersistenceManager;
-import com.reucon.openfire.plugin.archive.xep0136.Xep0136Support;
 import com.reucon.openfire.plugin.archive.xep0313.Xep0313Support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +78,6 @@ public class MonitoringPlugin implements Plugin, PluginListener
     private static MonitoringPlugin instance;
     private PersistenceManager persistenceManager;
     private PersistenceManager mucPersistenceManager;
-    private Xep0136Support xep0136Support;
     private Xep0313Support xep0313Support;
     private Xep0313Support1 xep0313Support1;
     private Xep0313Support2 xep0313Support2;
@@ -122,7 +121,7 @@ public class MonitoringPlugin implements Plugin, PluginListener
         archiveInterceptor = new ArchiveInterceptor(conversationManager);
         groupConversationInterceptor = new GroupConversationInterceptor(conversationManager);
         archiveIndexer = new ArchiveIndexer(conversationManager, taskEngine);
-        archiveSearcher = new ArchiveSearcher(conversationManager, archiveIndexer);
+        archiveSearcher = new ArchiveSearcher();
         mucIndexer = new MucIndexer(taskEngine, conversationManager);
         messageIndexer = new MessageIndexer(taskEngine, conversationManager);
     }
@@ -153,9 +152,6 @@ public class MonitoringPlugin implements Plugin, PluginListener
 
         persistenceManager = new JdbcPersistenceManager();
         mucPersistenceManager = new MucMamPersistenceManager();
-
-        xep0136Support = new Xep0136Support(XMPPServer.getInstance());
-        xep0136Support.start();
 
         xep0313Support = new Xep0313Support(XMPPServer.getInstance());
         xep0313Support.start();
@@ -258,10 +254,11 @@ public class MonitoringPlugin implements Plugin, PluginListener
             taskEngine.dispose();
             taskEngine = null;
         }
-        xep0136Support.stop();
         xep0313Support.stop();
         xep0313Support1.stop();
         xep0313Support2.stop();
+
+        OpenSearchClientHolder.closeClient();
         
         instance = null;
     }
