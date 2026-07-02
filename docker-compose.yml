@@ -1,0 +1,50 @@
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.19.6
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      bootstrap.memory_lock: "false"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  openfire:
+    build:
+      context: .
+      dockerfile: docker/openfire/Dockerfile
+      args:
+        OPENFIRE_VERSION: "5.1.0"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    ports:
+      - "5222:5222"
+      - "5269:5269"
+      - "7070:7070"
+      - "7443:7443"
+      - "9090:9090"
+    volumes:
+      - openfire-data:/var/lib/openfire
+      - openfire-logs:/var/log/openfire
+
+volumes:
+  opensearch-data:
+  openfire-data:
+  openfire-logs:
