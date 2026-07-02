@@ -39,8 +39,8 @@ import java.util.Set;
  */
 public class DatabaseUpdateSplitJIDsTask implements Runnable
 {
-    private static Logger Log = LoggerFactory.getLogger(DatabaseUpdateSplitJIDsTask.class );
-    private static SystemProperty<Boolean> JID_COLUMNS_HAVE_BEEN_MIGRATED = SystemProperty.Builder.ofType(Boolean.class)
+    private static final Logger Log = LoggerFactory.getLogger(DatabaseUpdateSplitJIDsTask.class );
+    private static final SystemProperty<Boolean> JID_COLUMNS_HAVE_BEEN_MIGRATED = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.database.jid-columns-have-been-migrated")
         .setDefaultValue(false)
         .setDynamic(true)

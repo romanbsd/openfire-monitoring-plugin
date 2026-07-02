@@ -24,11 +24,11 @@ import java.util.Random;
 /**
  */
 public class MockStatsViewer implements StatsViewer {
-    private StatsEngine engine;
+    private final StatsEngine engine;
 
-    private Map<String, double[][]> dataCache = new HashMap<String, double[][]>();
+    private final Map<String, double[][]> dataCache = new HashMap<>();
 
-    Random random = new Random();
+    final Random random = new Random();
 
     public MockStatsViewer(StatsEngine engine) {
         this.engine = engine;

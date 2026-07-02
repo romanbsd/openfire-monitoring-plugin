@@ -27,7 +27,6 @@ import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.StringUtils;
 import org.xmpp.packet.JID;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -56,7 +55,7 @@ public class MucIndexer extends LuceneIndexer
     public static final String ALL_MUC_MESSAGES = "SELECT roomID, sender, logTime, body, messageID FROM ofMucConversationLog WHERE messageID IS NOT NULL";
     public static final String NEW_MUC_MESSAGES = "SELECT roomID, sender, logTime, body, messageID FROM ofMucConversationLog WHERE messageID IS NOT NULL AND logTime > ?";
 
-    private ConversationManager conversationManager;
+    private final ConversationManager conversationManager;
 
     /**
      * A collection of rooms that are to be removed from the index during the next update or rebuild operation.
@@ -80,8 +79,7 @@ public class MucIndexer extends LuceneIndexer
     }
 
     @Override
-    protected Instant doUpdateIndex( final IndexWriter writer, final Instant lastModified ) throws IOException
-    {
+    protected Instant doUpdateIndex( final IndexWriter writer, final Instant lastModified ) {
         // Do nothing if room archiving is disabled.
         if ( !conversationManager.isRoomArchivingEnabled() ) {
             return lastModified;
@@ -99,8 +97,7 @@ public class MucIndexer extends LuceneIndexer
     }
 
     @Override
-    public Instant doRebuildIndex( final IndexWriter writer ) throws IOException
-    {
+    public Instant doRebuildIndex( final IndexWriter writer ) {
         // Do nothing if room archiving is disabled.
         if (!conversationManager.isRoomArchivingEnabled()) {
             return Instant.EPOCH;

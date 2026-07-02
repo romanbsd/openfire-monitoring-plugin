@@ -23,11 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
 
-import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.cluster.SendConversationEventsTask;
 import org.jivesoftware.openfire.cluster.ClusterManager;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
-import org.jivesoftware.util.JiveConstants;
 import org.jivesoftware.util.cache.CacheFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +44,12 @@ public class ConversationEventsQueue {
      * Chat events that are pending to be sent to the senior cluster member.
      * Key: Conversation Key; Value: List of conversation events.
      */
-    private final Map<String, List<ConversationEvent>> chatEvents = new HashMap<String, List<ConversationEvent>>();
+    private final Map<String, List<ConversationEvent>> chatEvents = new HashMap<>();
     /**
      * Group chat events that are pending to be sent to the senior cluster member.
      * Key: Conversation Key; Value: List of conversation events.
      */
-    private final Map<String, List<ConversationEvent>> roomEvents = new HashMap<String, List<ConversationEvent>>();
+    private final Map<String, List<ConversationEvent>> roomEvents = new HashMap<>();
 
     public ConversationEventsQueue(ConversationManager conversationManager, TaskEngine taskEngine) {
         this.conversationManager = conversationManager;
@@ -109,11 +107,7 @@ public class ConversationEventsQueue {
     public void addChatEvent(String conversationKey, ConversationEvent event) {
         Log.trace("Add chat event for key {}", conversationKey);
         synchronized (chatEvents) {
-            List<ConversationEvent> events = chatEvents.get(conversationKey);
-            if (events == null) {
-                events = new ArrayList<ConversationEvent>();
-                chatEvents.put(conversationKey, events);
-            }
+            List<ConversationEvent> events = chatEvents.computeIfAbsent(conversationKey, k -> new ArrayList<>());
             events.add(event);
         }
     }
@@ -127,11 +121,7 @@ public class ConversationEventsQueue {
     public void addGroupChatEvent(String conversationKey, ConversationEvent event) {
         Log.trace("Add group chat event for key {}", conversationKey);
         synchronized (roomEvents) {
-            List<ConversationEvent> events = roomEvents.get(conversationKey);
-            if (events == null) {
-                events = new ArrayList<ConversationEvent>();
-                roomEvents.put(conversationKey, events);
-            }
+            List<ConversationEvent> events = roomEvents.computeIfAbsent(conversationKey, k -> new ArrayList<>());
             events.add(event);
         }
     }

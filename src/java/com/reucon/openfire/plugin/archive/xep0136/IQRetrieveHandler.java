@@ -6,7 +6,6 @@ import com.reucon.openfire.plugin.archive.util.XmppDateUtil;
 import com.reucon.openfire.plugin.archive.xep.AbstractIQHandler;
 import com.reucon.openfire.plugin.archive.xep0059.XmppResultSet;
 import org.dom4j.Element;
-import org.jivesoftware.openfire.auth.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
@@ -27,7 +26,7 @@ public class IQRetrieveHandler extends AbstractIQHandler {
         super("Message Archiving Retrieve Handler", "retrieve", NAMESPACE);
     }
 
-    public IQ handleIQ(IQ packet) throws UnauthorizedException {
+    public IQ handleIQ(IQ packet) {
         final IQ reply = IQ.createResultIQ(packet);
         final RetrieveRequest retrieveRequest = new RetrieveRequest(
                 packet.getChildElement());
@@ -35,7 +34,7 @@ public class IQRetrieveHandler extends AbstractIQHandler {
         int toIndex; // exclusive
         int max;
 
-        Log.debug( "Processing a request to retrieve a conversation. Requestor: "+packet.getFrom()+", with: {}, start: {}", retrieveRequest.getWith(), retrieveRequest.getStart() );
+        Log.debug("Processing a request to retrieve a conversation. Requestor: {}, with: {}, start: {}", packet.getFrom(), retrieveRequest.getWith(), retrieveRequest.getStart());
         final Conversation conversation = retrieve(packet.getFrom(),
                 retrieveRequest);
 
@@ -51,7 +50,7 @@ public class IQRetrieveHandler extends AbstractIQHandler {
 
         max = conversation.getMessages().size();
         fromIndex = 0;
-        toIndex = max > 0 ? max : 0;
+        toIndex = Math.max(max, 0);
         Log.debug( "Found conversation with {} messages.", max );
 
         final XmppResultSet resultSet = retrieveRequest.getResultSet();
@@ -68,17 +67,16 @@ public class IQRetrieveHandler extends AbstractIQHandler {
                 fromIndex = Long.valueOf(resultSet.getAfter()).intValue() + 1;
                 toIndex = fromIndex + max;
             } else if (resultSet.getBefore() != null) {
-                if (Long.valueOf(resultSet.getBefore())!=Long.MAX_VALUE)
+                if (Long.parseLong(resultSet.getBefore())!=Long.MAX_VALUE)
                                 toIndex = Long.valueOf(resultSet.getBefore()).intValue();
                         else
                                 toIndex = conversation.getMessages().size();
                 fromIndex = toIndex - max;
             }
         }
-        fromIndex = fromIndex < 0 ? 0 : fromIndex;
-        toIndex = toIndex > conversation.getMessages().size() ? conversation
-                .getMessages().size() : toIndex;
-        toIndex = toIndex < fromIndex ? fromIndex : toIndex;
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, conversation.getMessages().size());
+        toIndex = Math.max(toIndex, fromIndex);
 
         final List<ArchivedMessage> messages = conversation.getMessages()
                 .subList(fromIndex, toIndex);
@@ -91,7 +89,7 @@ public class IQRetrieveHandler extends AbstractIQHandler {
         }
 
         if (resultSet != null) {
-            if (messages.size() > 0) {
+            if (!messages.isEmpty()) {
                         resultSet.setFirst(String.valueOf(fromIndex));
                         resultSet.setFirstIndex(fromIndex);
                         resultSet.setLast(String.valueOf(toIndex - 1));

@@ -17,7 +17,6 @@ package org.jivesoftware.openfire.reporting.stats;
 
 import org.jrobin.core.RrdBackendFactory;
 import org.jrobin.core.RrdBackend;
-import java.io.IOException;
 
 public class RrdSqlBackendFactory extends RrdBackendFactory {
     // name of the factory
@@ -27,15 +26,14 @@ public class RrdSqlBackendFactory extends RrdBackendFactory {
     // the second parameter is ignored
     // for the reason of simplicity
     @Override
-    protected RrdBackend open(String path, boolean readOnly)
-    throws IOException {
+    protected RrdBackend open(String path, boolean readOnly) {
         return new RrdSqlBackend(path, readOnly);
     }
 
     // checks if the RRD with the given id (path) already exists
     // in the database
     @Override
-    protected boolean exists(String path) throws IOException {
+    protected boolean exists(String path) {
         return RrdSqlBackend.exists(path);
     }
 

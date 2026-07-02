@@ -281,7 +281,7 @@ public class ArchiveSearch {
      * @param numResults the number of results to return.
      */
     public void setNumResults(int numResults) {
-        if (numResults != NULL_INT && numResults < 0) {
+        if (numResults < 0) {
             throw new IllegalArgumentException("numResults cannot be less than 0.");
         }
         this.numResults = numResults;

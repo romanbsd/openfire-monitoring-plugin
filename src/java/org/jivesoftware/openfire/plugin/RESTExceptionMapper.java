@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class RESTExceptionMapper implements ExceptionMapper<ServiceException> {
 
     /** The log. */
-    private static Logger LOG = LoggerFactory.getLogger(RESTExceptionMapper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RESTExceptionMapper.class);
 
     /**
      * Instantiates a new REST exception mapper.
@@ -35,9 +35,7 @@ public class RESTExceptionMapper implements ExceptionMapper<ServiceException> {
         errorResponse.setResource(exception.getResource());
         errorResponse.setMessage(exception.getMessage());
         errorResponse.setException(exception.getException());
-        LOG.error(
-                exception.getException() + ": " + exception.getMessage() + " with resource "
-                        + exception.getResource(), exception.getException());
+        LOG.error("{}: {} with resource {}", exception.getException(), exception.getMessage(), exception.getResource(), exception.getException());
         return Response.status(exception.getStatus()).entity(errorResponse).type(MediaType.APPLICATION_XML).build();
     }
 

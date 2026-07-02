@@ -19,13 +19,11 @@ package org.jivesoftware.openfire.archive;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.util.BytesRef;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
 import org.jivesoftware.util.JiveGlobals;
 import org.xmpp.packet.JID;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;

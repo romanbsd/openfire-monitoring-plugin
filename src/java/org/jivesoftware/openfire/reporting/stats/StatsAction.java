@@ -22,28 +22,15 @@ import org.jivesoftware.openfire.archive.MonitoringConstants;
 import org.jivesoftware.openfire.plugin.MonitoringPlugin;
 import org.jivesoftware.openfire.reporting.graph.GraphEngine;
 import org.jivesoftware.openfire.stats.Statistic;
-import org.jivesoftware.openfire.user.UserNameManager;
-import org.jivesoftware.openfire.user.UserNotFoundException;
 import org.jivesoftware.util.JiveGlobals;
-import org.jivesoftware.util.LocaleUtils;
-import org.jivesoftware.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmpp.packet.JID;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,8 +50,8 @@ public class StatsAction {
      * 'packet_count') each containing an array of int (low value, high value
      * and current value).
      */
-    public Map<String, Map> getUpdatedStats(String timePeriod) {
-        Map<String, Map> results = new HashMap<String, Map>();
+    public Map<String, Map<String, Object>> getUpdatedStats(String timePeriod) {
+        Map<String, Map<String, Object>> results = new HashMap<>();
         long[] startAndEnd = GraphEngine.parseTimePeriod(timePeriod);
         String[] stats = new String[] {
             StatisticsModule.SESSIONS_KEY, ConversationManager.CONVERSATIONS_KEY, StatisticsModule.TRAFFIC_KEY,
@@ -82,16 +69,16 @@ public class StatsAction {
      * @param timePeriod
      * @return map containing keys 'low', 'high' and 'count'.
      */
-    public Map getUpdatedStat(String statkey, String timePeriod) {
+    public Map<String, Object> getUpdatedStat(String statkey, String timePeriod) {
         long[] startAndEnd = GraphEngine.parseTimePeriod(timePeriod);
         return getUpdatedStat(statkey, startAndEnd);
     }
 
-    private Map getUpdatedStat(String statkey, long[] timePeriod) {
+    private Map<String, Object> getUpdatedStat(String statkey, long[] timePeriod) {
         MonitoringPlugin plugin = (MonitoringPlugin)XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME).get();
         StatsViewer viewer = plugin.getStatsViewer();
         String[] lowHigh = getLowAndHigh(statkey, timePeriod);
-        Map stat = new HashMap();
+        Map<String, Object> stat = new HashMap<>();
         stat.put("low", lowHigh[0]);
         stat.put("high", lowHigh[1]);
         stat.put("count", (int)viewer.getCurrentValue(statkey)[0]);
@@ -118,8 +105,8 @@ public class StatsAction {
         if(lows.length > 0) {
             if (representationSemantics == Statistic.RepresentationSemantics.SNAPSHOT) {
                 double result = 0;
-                for (int i = 0; i < lows.length; i++ ) {
-                        result += lows[i];
+                for (double v : lows) {
+                    result += v;
                 }
                 low = String.valueOf((int) result);
             }
@@ -141,8 +128,8 @@ public class StatsAction {
         if(highs.length > 0) {
             if (representationSemantics == Statistic.RepresentationSemantics.SNAPSHOT) {
                 double result = 0;
-                for (int i=0; i < highs.length; i++ ) {
-                        result += highs[i];
+                for (double v : highs) {
+                    result += v;
                 }
                 high = String.valueOf((int) result);
             }
@@ -165,11 +152,7 @@ public class StatsAction {
         return new String[]{low, high};
     }
 
-    private Comparator<Conversation> conversationComparator = new Comparator<Conversation>() {
-        public int compare(Conversation conv1, Conversation conv2) {
-           return conv2.getLastActivity().compareTo(conv1.getLastActivity());
-        }
-    };
+    private final Comparator<Conversation> conversationComparator = (conv1, conv2) -> conv2.getLastActivity().compareTo(conv1.getLastActivity());
 
     /**
      * Formats a given time using the <code>DateFormat.MEDIUM</code>. In the 'en' locale, this

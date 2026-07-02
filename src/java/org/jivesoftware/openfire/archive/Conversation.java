@@ -299,7 +299,7 @@ public class Conversation {
             // Get last known participation and check that the user has finished it
             ConversationParticipation lastParticipation = userParticipations.getRecentParticipation();
             if (lastParticipation != null && lastParticipation.getLeft() == null) {
-                Log.warn("Found user that never left a previous conversation: " + user);
+                Log.warn("Found user that never left a previous conversation: {}", user);
                 lastParticipation.participationEnded(new Date(timestamp));
                 // Queue storeage of updated participation information
                 conversationManager.queueParticipantLeft(this, user, lastParticipation);
@@ -328,12 +328,12 @@ public class Conversation {
         // Get the list of participations of the specified user
         UserParticipations userParticipations = participants.get(user.toString());
         if (userParticipations == null) {
-            Log.warn("Found user that left a conversation but never started it: " + user);
+            Log.warn("Found user that left a conversation but never started it: {}", user);
         } else {
             // Get last known participation and check that the user has not finished it
             ConversationParticipation currentParticipation = userParticipations.getRecentParticipation();
             if (currentParticipation == null || currentParticipation.getLeft() != null) {
-                Log.warn("Found user that left a conversation but never started it: " + user);
+                Log.warn("Found user that left a conversation but never started it: {}", user);
             } else {
                 currentParticipation.participationEnded(new Date(timestamp));
                 // Queue storeage of updated participation information

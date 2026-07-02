@@ -65,7 +65,7 @@ import org.jivesoftware.util.JiveGlobals;
  * @see StatsViewer
  */
 public class GraphEngine {
-    private StatsViewer statsViewer;
+    private final StatsViewer statsViewer;
 
     private static final long YEAR = 31104000000L;
 
@@ -120,11 +120,9 @@ public class GraphEngine {
      * @param endTime
      * @param dataPoints
      * @return
-     * @throws IOException
      */
     public JFreeChart generateChart(String key, int width, int height, String color, long startTime, long endTime,
-                                    int dataPoints) throws IOException
-    {
+                                    int dataPoints) {
         Statistic[] def = statsViewer.getStatistic(key);
         if (def == null) {
             return null;
@@ -648,7 +646,6 @@ public class GraphEngine {
         // Compute "this week" by resetting the day of the week to the first day of the week
         cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
         Date thisWeekStart = cal.getTime();
-        Date thisWeekEnd = now;
         // Compute last week - start with the end boundary which is 1 millisecond before the start of this week
         cal.add(Calendar.MILLISECOND, -1);
         Date lastWeekEnd = cal.getTime();
@@ -665,7 +662,6 @@ public class GraphEngine {
         // Reset to the 1st day of the month, make the the start boundary for "this month"
         cal.set(Calendar.DAY_OF_MONTH, cal.getMinimum(Calendar.DAY_OF_MONTH));
         Date thisMonthStart = cal.getTime();
-        Date thisMonthEnd = now;
         // Compute last month
         cal.add(Calendar.MILLISECOND, -1);
         Date lastMonthEnd = cal.getTime();
@@ -680,7 +676,6 @@ public class GraphEngine {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date last3MonthsStart = cal.getTime();
-        Date last3MonthsEnd = now;
         // Compute last 7 days:
         cal.setTime(now);
         cal.add(Calendar.DAY_OF_YEAR, -6);
@@ -689,104 +684,109 @@ public class GraphEngine {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date last7DaysStart = cal.getTime();
-        Date last7DaysEnd = now;
         // Compute last 60 minutes;
         cal.setTime(now);
         cal.add(Calendar.MINUTE, -60);
         Date last60MinutesStart = cal.getTime();
-        Date last60MinutesEnd = now;
         // Compute last 24 hours;
         cal.setTime(now);
         cal.add(Calendar.HOUR, -23);
         Date last24HoursStart = cal.getTime();
-        Date last24HoursEnd = now;
         // Done, reset the cal internal date to now
         cal.setTime(now);
 
-        if ("thisweek".equals(timeperiod)) {
-            fromDate = thisWeekStart;
-            toDate = thisWeekEnd;
-            dataPoints = 7;
-        } else if ("last7days".equals(timeperiod)) {
-            fromDate = last7DaysStart;
-            toDate = last7DaysEnd;
-            dataPoints = 7;
-        } else if ("lastweek".equals(timeperiod)) {
-            fromDate = lastWeekStart;
-            toDate = lastWeekEnd;
-            dataPoints = 7;
-        } else if ("thismonth".equals(timeperiod)) {
-            fromDate = thisMonthStart;
-            toDate = thisMonthEnd;
-            dataPoints = 30;
-        } else if ("lastmonth".equals(timeperiod)) {
-            fromDate = lastMonthStart;
-            toDate = lastMonthEnd;
-            dataPoints = 30;
-        } else if ("last3months".equals(timeperiod)) {
-            fromDate = last3MonthsStart;
-            toDate = last3MonthsEnd;
-            dataPoints = (long)Math.ceil((toDate.getTime() - fromDate.getTime()) / WEEK);
-        } else if ("last60minutes".equals(timeperiod)) {
-            fromDate = last60MinutesStart;
-            toDate = last60MinutesEnd;
-            dataPoints = 60;
-        } else if ("last24hours".equals(timeperiod)) {
-            fromDate = last24HoursStart;
-            toDate = last24HoursEnd;
-            dataPoints = 48;
-        } else {
-            String[] dates = timeperiod.split("to");
-            if (dates.length > 0) {
+        switch (timeperiod) {
+            case "thisweek" -> {
+                fromDate = thisWeekStart;
+                toDate = now;
+                dataPoints = 7;
+            }
+            case "last7days" -> {
+                fromDate = last7DaysStart;
+                toDate = now;
+                dataPoints = 7;
+            }
+            case "lastweek" -> {
+                fromDate = lastWeekStart;
+                toDate = lastWeekEnd;
+                dataPoints = 7;
+            }
+            case "thismonth" -> {
+                fromDate = thisMonthStart;
+                toDate = now;
+                dataPoints = 30;
+            }
+            case "lastmonth" -> {
+                fromDate = lastMonthStart;
+                toDate = lastMonthEnd;
+                dataPoints = 30;
+            }
+            case "last3months" -> {
+                fromDate = last3MonthsStart;
+                toDate = now;
+                dataPoints = (long) Math.ceil((double) (toDate.getTime() - fromDate.getTime()) / WEEK);
+            }
+            case "last60minutes" -> {
+                fromDate = last60MinutesStart;
+                toDate = now;
+                dataPoints = 60;
+            }
+            case "last24hours" -> {
+                fromDate = last24HoursStart;
+                toDate = now;
+                dataPoints = 48;
+            }
+            default -> {
+                String[] dates = timeperiod.split("to");
+                if (dates.length > 0) {
 
-                String fromDateParam = dates[0];
-                String toDateParam = dates[1];
-                if (fromDateParam != null) {
-                    DateFormat formDateFormatter;
-                    if (fromDateParam.contains("/")) {
-                        // This was used by the old calendarjs code. Retain it to not break old links/bookmarks, etc.
-                        formDateFormatter = new SimpleDateFormat("MM/dd/yy");
-                    } else {
-                        formDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+                    String fromDateParam = dates[0];
+                    String toDateParam = dates[1];
+                    if (fromDateParam != null) {
+                        DateFormat formDateFormatter;
+                        if (fromDateParam.contains("/")) {
+                            // This was used by the old calendarjs code. Retain it to not break old links/bookmarks, etc.
+                            formDateFormatter = new SimpleDateFormat("MM/dd/yy");
+                        } else {
+                            formDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+                        }
+                        try {
+                            fromDate = formDateFormatter.parse(fromDateParam);
+                        } catch (Exception e) {
+                            // ignore formatting exception
+                        }
                     }
-                    try {
-                        fromDate = formDateFormatter.parse(fromDateParam);
-                    }
-                    catch (Exception e) {
-                        // ignore formatting exception
-                    }
-                }
-                if (toDateParam != null) {
-                    DateFormat formDateFormatter;
-                    if (toDateParam.contains("/")) {
-                        // This was used by the old calendarjs code. Retain it to not break old links/bookmarks, etc.
-                        formDateFormatter = new SimpleDateFormat("MM/dd/yy");
-                    } else {
-                        formDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-                    }
+                    if (toDateParam != null) {
+                        DateFormat formDateFormatter;
+                        if (toDateParam.contains("/")) {
+                            // This was used by the old calendarjs code. Retain it to not break old links/bookmarks, etc.
+                            formDateFormatter = new SimpleDateFormat("MM/dd/yy");
+                        } else {
+                            formDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+                        }
 
-                    try {
-                        toDate = formDateFormatter.parse(toDateParam);
-                        // Make this date be the end of the day (so it's the day *inclusive*, not *exclusive*)
-                        Calendar adjusted = Calendar.getInstance();
-                        adjusted.setTime(toDate);
-                        adjusted.set(Calendar.HOUR_OF_DAY, 23);
-                        adjusted.set(Calendar.MINUTE, 59);
-                        adjusted.set(Calendar.SECOND, 59);
-                        adjusted.set(Calendar.MILLISECOND, 999);
-                        toDate = adjusted.getTime();
+                        try {
+                            toDate = formDateFormatter.parse(toDateParam);
+                            // Make this date be the end of the day (so it's the day *inclusive*, not *exclusive*)
+                            Calendar adjusted = Calendar.getInstance();
+                            adjusted.setTime(toDate);
+                            adjusted.set(Calendar.HOUR_OF_DAY, 23);
+                            adjusted.set(Calendar.MINUTE, 59);
+                            adjusted.set(Calendar.SECOND, 59);
+                            adjusted.set(Calendar.MILLISECOND, 999);
+                            toDate = adjusted.getTime();
+                        } catch (Exception e) {
+                            // ignore formatting exception
+                        }
                     }
-                    catch (Exception e) {
-                        // ignore formatting exception
-                    }
+                    dataPoints = discoverDataPoints(fromDate, toDate);
                 }
-                dataPoints = discoverDataPoints(fromDate, toDate);
             }
         }
 
         // default to last 60 minutes
         if (null == fromDate && null==toDate) {
-            return new long[] {last60MinutesStart.getTime(), last60MinutesEnd.getTime(), dataPoints};
+            return new long[] {last60MinutesStart.getTime(), now.getTime(), dataPoints};
         } else if (null == fromDate) {
             return new long[] {0, toDate.getTime(), dataPoints};
         } else if (null == toDate) {
@@ -812,8 +812,8 @@ public class GraphEngine {
     public static class GraphDefinition {
         public static final GraphDefinition standard_light;
         public static final GraphDefinition standard_dark;
-        private Color[] inlineColors;
-        private Color[] outlineColors;
+        private final Color[] inlineColors;
+        private final Color[] outlineColors;
 
         static {
             standard_light = new GraphDefinition(

@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import org.xmpp.packet.JID;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -131,7 +130,7 @@ public class ConversationUtils {
         return cons;
     }
 
-    public ByteArrayOutputStream getConversationPDF(ConversationManager conversationManager, Conversation conversation) throws IOException {
+    public ByteArrayOutputStream getConversationPDF(ConversationManager conversationManager, Conversation conversation) {
         Map<JID, Color> colorMap = new HashMap<>();
         if (conversation != null) {
             Collection<JID> set = conversation.getParticipants();
@@ -156,7 +155,7 @@ public class ConversationUtils {
         return buildPDFContent(conversationManager, conversation, colorMap);
     }
 
-    private ByteArrayOutputStream buildPDFContent(ConversationManager conversationManager, Conversation conversation, Map<JID, Color> colorMap) throws IOException {
+    private ByteArrayOutputStream buildPDFContent(ConversationManager conversationManager, Conversation conversation, Map<JID, Color> colorMap) {
 
         try ( final ByteArrayOutputStream baos = new ByteArrayOutputStream();
               final PdfWriter writer = new PdfWriter(baos);
@@ -241,7 +240,7 @@ public class ConversationUtils {
             return baos;
         }
         catch (Exception e) {
-            Log.error("error creating PDF document: " + e.getMessage(), e);
+            Log.error("error creating PDF document: {}", e.getMessage(), e);
             return null;
         }
     }
@@ -261,7 +260,7 @@ public class ConversationUtils {
         }
         else {
             info.setConversationID(conversation.getConversationID());
-            JID[] occupants = col.toArray(new JID[col.size()]);
+            JID[] occupants = col.toArray(new JID[0]);
             String[] jids = new String[col.size()];
             for (int i = 0; i < occupants.length; i++) {
                 jids[i] = formatJID(formatParticipants, occupants[i]);
@@ -270,7 +269,7 @@ public class ConversationUtils {
             info.setRoomJID(conversation.getRoom().toBareJID());
         }
 
-        Map<String, String> cssLabels = new HashMap<String, String>();
+        Map<String, String> cssLabels = new HashMap<>();
         int count = 0;
         for (JID jid : col) {
             if (!cssLabels.containsKey(jid.toString())) {
@@ -308,8 +307,8 @@ public class ConversationUtils {
             String body = StringUtils.escapeHTMLTags(message.getBody());
             builder.append("<tr valign=top>");
             if (!message.isRoomEvent()) {
-                builder.append("<td width=1% nowrap class=" + cssLabel + ">").append("[").append(time).append("]").append("</td>");
-                builder.append("<td width=1% class=" + cssLabel + ">").append(from);
+                builder.append("<td width=1% nowrap class=").append(cssLabel).append(">").append("[").append(time).append("]").append("</td>");
+                builder.append("<td width=1% class=").append(cssLabel).append(">").append(from);
                 if (to != null) {
                     builder.append("&rarr;").append(to);
                 }
@@ -323,11 +322,9 @@ public class ConversationUtils {
             builder.append("</tr>");
         }
 
-        if (conversation.getMessages(conversationManager).size() == 0) {
-            builder.append("<span class=small-description>" +
-                LocaleUtils.getLocalizedString("archive.search.results.archive_disabled",
-                        MonitoringConstants.NAME) +
-                "</a>");
+        if (conversation.getMessages(conversationManager).isEmpty()) {
+            builder.append("<span class=small-description>").append(LocaleUtils.getLocalizedString("archive.search.results.archive_disabled",
+                MonitoringConstants.NAME)).append("</a>");
         }
 
         info.setBody(builder.toString());

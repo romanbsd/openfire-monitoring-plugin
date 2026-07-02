@@ -19,7 +19,6 @@ package org.jivesoftware.openfire.archive;
 import org.jivesoftware.openfire.cluster.ClusterManager;
 import org.jivesoftware.openfire.interceptor.InterceptorManager;
 import org.jivesoftware.openfire.interceptor.PacketInterceptor;
-import org.jivesoftware.openfire.interceptor.PacketRejectedException;
 import org.jivesoftware.openfire.privacy.PrivacyList;
 import org.jivesoftware.openfire.privacy.PrivacyListManager;
 import org.jivesoftware.openfire.session.Session;
@@ -52,9 +51,7 @@ public class ArchiveInterceptor implements PacketInterceptor {
         this.conversationManager = conversationManager;
     }
 
-    public void interceptPacket(Packet packet, Session session, boolean incoming, boolean processed)
-            throws PacketRejectedException
-    {
+    public void interceptPacket(Packet packet, Session session, boolean incoming, boolean processed) {
         // Ignore any packets that haven't already been processed by interceptors.
         if (!processed) {
             return;

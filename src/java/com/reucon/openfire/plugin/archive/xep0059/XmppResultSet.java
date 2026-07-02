@@ -12,7 +12,7 @@ public class XmppResultSet
 {
     private static final Logger Log = LoggerFactory.getLogger( XmppResultSet.class );
 
-    public static String NAMESPACE = "http://jabber.org/protocol/rsm";
+    public static final String NAMESPACE = "http://jabber.org/protocol/rsm";
     private String after;
     private String before;
     private Integer index;

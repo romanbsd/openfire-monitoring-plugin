@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.dom4j.Element;
-import org.jivesoftware.openfire.auth.UnauthorizedException;
 import org.jivesoftware.openfire.disco.ServerFeaturesProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ public class IQListHandler extends AbstractIQHandler implements
         super("Message Archiving List Handler", "list", NAMESPACE);
     }
 
-    public IQ handleIQ(IQ packet) throws UnauthorizedException {
+    public IQ handleIQ(IQ packet) {
         IQ reply = IQ.createResultIQ(packet);
         ListRequest listRequest = new ListRequest(packet.getChildElement());
         JID from = packet.getFrom();
@@ -70,7 +69,7 @@ public class IQListHandler extends AbstractIQHandler implements
     }
 
     public Iterator<String> getFeatures() {
-        ArrayList<String> features = new ArrayList<String>();
+        ArrayList<String> features = new ArrayList<>();
         features.add(NAMESPACE_MANAGE);
         return features.iterator();
     }

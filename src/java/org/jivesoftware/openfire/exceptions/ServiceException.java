@@ -1,6 +1,7 @@
 package org.jivesoftware.openfire.exceptions;
 
 import javax.ws.rs.core.Response.Status;
+import java.io.Serial;
 
 /**
  * The Class MUCServiceException.
@@ -8,6 +9,7 @@ import javax.ws.rs.core.Response.Status;
 public class ServiceException extends Exception {
 
     /** The Constant serialVersionUID. */
+    @Serial
     private static final long serialVersionUID = 4351720088030656859L;
 
     /** The resource. */

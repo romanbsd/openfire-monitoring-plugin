@@ -19,15 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimerTask;
+import java.util.*;
 
 import org.jivesoftware.openfire.archive.MonitoringConstants;
 import org.jivesoftware.openfire.cluster.ClusterManager;
@@ -64,11 +56,11 @@ public class StatsEngine {
 
     private final StatisticsManager statsManager;
 
-    private final Map<String, StatDefinition> definitionMap = new HashMap<String, StatDefinition>();
+    private final Map<String, StatDefinition> definitionMap = new HashMap<>();
 
-    private final Map<String, List<StatDefinition>> multiMap = new HashMap<String, List<StatDefinition>>();
+    private final Map<String, List<StatDefinition>> multiMap = new HashMap<>();
 
-    private SampleTask samplingTask = new SampleTask();
+    private final SampleTask samplingTask = new SampleTask();
 
     /**
      * The default constructor used by the plugin container.
@@ -117,7 +109,7 @@ public class StatsEngine {
                     // Delete the RRD file
                     rrdFile.delete();
                 } catch (IOException e) {
-                    Log.error("Error importing rrd file: " + rrdFile, e);
+                    Log.error("Error importing rrd file: {}", rrdFile, e);
                 }
             }
         }
@@ -202,10 +194,7 @@ public class StatsEngine {
                 }
                 definitionMap.put(key, def);
             }
-            catch (RrdException e) {
-                Log.error("Error creating database definition", e);
-            }
-            catch (IOException e) {
+            catch (RrdException | IOException e) {
                 Log.error("Error creating database definition", e);
             }
         }
@@ -228,7 +217,7 @@ public class StatsEngine {
     {
         List<StatDefinition> statList = multiMap.get(statGroup);
         if (shouldCreate && statList == null) {
-            statList = new ArrayList<StatDefinition>();
+            statList = new ArrayList<>();
             multiMap.put(statGroup, statList);
         }
         if (statList == null) {
@@ -240,7 +229,7 @@ public class StatsEngine {
         StatDefinition[] definitions;
         //if (statsManager.getStatGroup(statGroup).size() == statList.size()) {
         if (statsManager.getStatGroup(statGroup).stream().filter(key -> !StatisticsModule.OF_3142_DEPRECATED.containsKey(key)).count() == statList.size()) {
-            definitions = statList.toArray(new StatDefinition[statList.size()]);
+            definitions = statList.toArray(new StatDefinition[0]);
         }
         else {
             definitions = null;
@@ -280,7 +269,7 @@ public class StatsEngine {
             }
         }
         else {
-            return defs.toArray(new StatDefinition[defs.size()]);
+            return defs.toArray(new StatDefinition[0]);
         }
     }
 
@@ -292,7 +281,7 @@ public class StatsEngine {
     String [] getAllHighLevelNames() {
         Set<String> keySet = multiMap.keySet();
 
-        return keySet.toArray(new String[keySet.size()]);
+        return keySet.toArray(new String[0]);
     }
 
     /**
@@ -334,7 +323,7 @@ public class StatsEngine {
             // Gather sample statistics from remote cluster nodes
             Collection<Map<String, Double>> remoteSamples = CacheFactory.doSynchronousClusterTask(new GetStatistics(), false);
 
-            List<String> sampledStats = new ArrayList<String>();
+            List<String> sampledStats = new ArrayList<>();
             for (Map.Entry<String, Statistic> statisticEntry : statsManager.getAllStatistics()) {
                 String key = statisticEntry.getKey();
                 if (StatisticsModule.OF_3142_DEPRECATED.containsKey(key)) {
@@ -377,15 +366,13 @@ public class StatsEngine {
                     // Openfire is updating the same database. Also, if there is a task taking a
                     // long time to complete
                     if(newTime <= db.getLastArchiveUpdateTime()) {
-                        Log.warn("Sample time of " + newTime +  " for statistic " + key + " is " +
-                                "invalid.");
+                        Log.warn("Sample time of {} for statistic {} is invalid.", newTime, key);
                         continue;
                     }
                     Sample sample = db.createSample(newTime);
 
                     if (Log.isDebugEnabled()) {
-                        Log.debug("Stat: " + db.getPath() + ". Last sample: " + db.getLastUpdateTime() +
-                                ". New sample: " + sample.getTime());
+                        Log.debug("Stat: {}. Last sample: {}. New sample: {}", db.getPath(), db.getLastUpdateTime(), sample.getTime());
                     }
 
                     for (StatDefinition definition : definitions) {
@@ -414,11 +401,8 @@ public class StatsEngine {
                     }
                     sample.update();
                 }
-                catch (IOException e) {
-                    Log.error("Error sampling for statistic " + key, e);
-                }
-                catch (RrdException e) {
-                    Log.error("Error sampling for statistic " + key, e);
+                catch (IOException | RrdException e) {
+                    Log.error("Error sampling for statistic {}", key, e);
                 }
                 finally {
                     if (db != null) {
@@ -445,7 +429,7 @@ public class StatsEngine {
             long start = System.currentTimeMillis();
             double sample = definition.getStatistic().sample();
             if (System.currentTimeMillis() - start >= 500) {
-                Log.warn("Stat " + statKey + " took longer than a second to sample.");
+                Log.warn("Stat {} took longer than a second to sample.", statKey);
             }
             return sample;
         }
@@ -457,9 +441,9 @@ public class StatsEngine {
      *
      * @author Alexander Wenckus
      */
-    private class DefaultStatDefinition extends StatDefinition {
+    private static class DefaultStatDefinition extends StatDefinition {
 
-        private String consolidationFunction;
+        private final String consolidationFunction;
 
         DefaultStatDefinition(String dbPath, String datasourceName, Statistic stat) {
             super(dbPath, datasourceName, stat);
@@ -467,12 +451,10 @@ public class StatsEngine {
         }
 
         private String determineConsolidationFun(Statistic statistic) {
-            switch (statistic.getRepresentationSemantics()) {
-                case SNAPSHOT:
-                    return ConsolFuns.CF_LAST;
-                default:
-                    return ConsolFuns.CF_AVERAGE;
+            if (Objects.requireNonNull(statistic.getRepresentationSemantics()) == Statistic.RepresentationSemantics.SNAPSHOT) {
+                return ConsolFuns.CF_LAST;
             }
+            return ConsolFuns.CF_AVERAGE;
         }
 
         @Override
@@ -545,7 +527,7 @@ public class StatsEngine {
         }
 
         private long getResolution(long startTime, long endTime, int dataPoints) {
-            return (endTime - startTime) / (dataPoints * 60);
+            return (endTime - startTime) / (dataPoints * 60L);
         }
 
         @Override

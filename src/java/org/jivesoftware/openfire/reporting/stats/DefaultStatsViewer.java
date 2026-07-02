@@ -26,7 +26,7 @@ public class DefaultStatsViewer implements StatsViewer {
 
     private static final Logger Log = LoggerFactory.getLogger(DefaultStatsViewer.class);
     
-    private StatsEngine engine;
+    private final StatsEngine engine;
 
     /**
      * Default constructor used by the plugin container to create this class.
@@ -130,7 +130,7 @@ public class DefaultStatsViewer implements StatsViewer {
                     return new double[] { db.getLastDatasourceValues()[0] };
                 }
             } catch (Exception e) {
-                Log.error("Error retrieving last sample value for: " + key, e);
+                Log.error("Error retrieving last sample value for: {}", key, e);
             }
             return new double[] { 0 };
         }

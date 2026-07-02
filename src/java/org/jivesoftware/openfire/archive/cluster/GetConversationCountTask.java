@@ -49,7 +49,7 @@ public class GetConversationCountTask implements ClusterTask<Integer>
 
     public void run() {
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
-        if (!plugin.isPresent()) {
+        if (plugin.isEmpty()) {
             Log.error("Unable to execute cluster task! The Monitoring plugin does not appear to be loaded on this machine.");
             return;
         }

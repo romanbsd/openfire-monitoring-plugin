@@ -19,7 +19,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.jivesoftware.openfire.stats.Statistic;
 import org.jivesoftware.openfire.stats.StatisticsManager;
@@ -85,7 +84,7 @@ public class GetStatistics implements ClusterTask<Map<String, Double>> {
         long start = System.currentTimeMillis();
         double sample = statistic.sample();
         if (System.currentTimeMillis() - start >= 500) {
-            Log.warn("Stat " + statKey + " took longer than a second to sample.");
+            Log.warn("Stat {} took longer than a second to sample.", statKey);
         }
         return sample;
     }

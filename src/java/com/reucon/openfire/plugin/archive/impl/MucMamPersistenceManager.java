@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class MucMamPersistenceManager implements PersistenceManager {
     private final static Logger Log = LoggerFactory.getLogger( MucMamPersistenceManager.class );
-    private static SystemProperty<Boolean> USE_OPENFIRE_TABLES = SystemProperty.Builder.ofType(Boolean.class)
+    private static final SystemProperty<Boolean> USE_OPENFIRE_TABLES = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.database.use-openfire-tables")
         .setDefaultValue(false)
         .setDynamic(true)
@@ -273,17 +273,14 @@ public class MucMamPersistenceManager implements PersistenceManager {
         } catch (SQLException ex) {
             Log.warn("SQL failure while trying to get message with ID {} from the archive of MUC room {}.", messageId, room.getJID(), ex);
             return null;
-        } catch (DocumentException ex) {
-            Log.warn("Failure to parse 'stanza' value as XMPP for the message with ID {} from the archive of MUC room {}.", messageId, room.getJID(), ex);
-            return null;
         } finally {
             DbConnectionManager.closeConnection(rs, pstmt, connection);
         }
     }
 
-    static protected ArchivedMessage asArchivedMessage(JID roomJID, String senderJID, String nickname, Date sentDate, String subject, String body, String stanza, long id) throws DocumentException {
+    static protected ArchivedMessage asArchivedMessage(JID roomJID, String senderJID, String nickname, Date sentDate, String subject, String body, String stanza, long id) {
         final JID with;
-        if (nickname != null && nickname.trim().length() > 0) {
+        if (nickname != null && !nickname.trim().isEmpty()) {
             // Recreate the sender address based on the nickname and room's JID
             with = new JID(roomJID.getNode(), roomJID.getDomain(), nickname, true);
         }

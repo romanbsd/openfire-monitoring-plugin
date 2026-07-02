@@ -104,45 +104,45 @@ public class LogsBrowserServlet extends HttpServlet
         }
 
         final String intent = safeTrim(request.getParameter("intent"));
-        if ("service".equals(intent)) {
-            final String service = safeTrim(request.getParameter("service"));
-            if (service.isEmpty()) {
-                response.sendRedirect(basePath + "/");
+        switch (intent) {
+            case "service" -> {
+                final String service = safeTrim(request.getParameter("service"));
+                if (service.isEmpty()) {
+                    response.sendRedirect(basePath + "/");
+                    return;
+                }
+                response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/");
                 return;
             }
-            response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/");
-            return;
-        }
-
-        if ("room".equals(intent)) {
-            final String service = safeTrim(request.getParameter("service"));
-            final String room = safeTrim(request.getParameter("room"));
-            if (service.isEmpty() || room.isEmpty()) {
-                response.sendRedirect(basePath + "/");
-                return;
-            }
-            response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/" + encodePathSegment(room) + "/");
-            return;
-        }
-
-        if ("date".equals(intent)) {
-            final String service = safeTrim(request.getParameter("service"));
-            final String room = safeTrim(request.getParameter("room"));
-            final String date = safeTrim(request.getParameter("date"));
-            if (service.isEmpty() || room.isEmpty() || date.isEmpty()) {
-                response.sendRedirect(basePath + "/");
-                return;
-            }
-
-            try {
-                LocalDate.parse(date, ISO_LOCAL_DATE);
-            } catch (DateTimeParseException ex) {
+            case "room" -> {
+                final String service = safeTrim(request.getParameter("service"));
+                final String room = safeTrim(request.getParameter("room"));
+                if (service.isEmpty() || room.isEmpty()) {
+                    response.sendRedirect(basePath + "/");
+                    return;
+                }
                 response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/" + encodePathSegment(room) + "/");
                 return;
             }
+            case "date" -> {
+                final String service = safeTrim(request.getParameter("service"));
+                final String room = safeTrim(request.getParameter("room"));
+                final String date = safeTrim(request.getParameter("date"));
+                if (service.isEmpty() || room.isEmpty() || date.isEmpty()) {
+                    response.sendRedirect(basePath + "/");
+                    return;
+                }
 
-            response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/" + encodePathSegment(room) + "/" + date);
-            return;
+                try {
+                    LocalDate.parse(date, ISO_LOCAL_DATE);
+                } catch (DateTimeParseException ex) {
+                    response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/" + encodePathSegment(room) + "/");
+                    return;
+                }
+
+                response.sendRedirect(basePath + "/" + encodePathSegment(service) + "/" + encodePathSegment(room) + "/" + date);
+                return;
+            }
         }
 
         response.sendRedirect(basePath + "/");
@@ -553,33 +553,31 @@ public class LogsBrowserServlet extends HttpServlet
         final String min = dates.get(0);
         final String max = dates.get(dates.size() - 1);
 
-        final StringBuilder result = new StringBuilder();
-        result.append("<form class=\"selector-form\" method=\"post\" action=\"")
-            .append(escapeHtml(basePath))
-            .append("/\">")
-            .append("<input type=\"hidden\" name=\"intent\" value=\"date\" />")
-            .append("<input type=\"hidden\" name=\"service\" value=\"")
-            .append(escapeHtml(serviceName))
-            .append("\" />")
-            .append("<input type=\"hidden\" name=\"room\" value=\"")
-            .append(escapeHtml(roomName))
-            .append("\" />")
-            .append("<label for=\"date\">Date (UTC)</label>")
-            .append("<input id=\"date\" name=\"date\" type=\"date\" min=\"")
-            .append(min)
-            .append("\" max=\"")
-            .append(max)
-            .append("\" value=\"")
-            .append(max)
-            .append("\" required />")
-            .append("<button type=\"submit\">Show logs</button>")
-            .append("</form>")
-            .append("<p class=\"hint\">Available date range: ")
-            .append(escapeHtml(min))
-            .append(" to ")
-            .append(escapeHtml(max))
-            .append(" (UTC).</p>");
-        return result.toString();
+        return "<form class=\"selector-form\" method=\"post\" action=\"" +
+            escapeHtml(basePath) +
+            "/\">" +
+            "<input type=\"hidden\" name=\"intent\" value=\"date\" />" +
+            "<input type=\"hidden\" name=\"service\" value=\"" +
+            escapeHtml(serviceName) +
+            "\" />" +
+            "<input type=\"hidden\" name=\"room\" value=\"" +
+            escapeHtml(roomName) +
+            "\" />" +
+            "<label for=\"date\">Date (UTC)</label>" +
+            "<input id=\"date\" name=\"date\" type=\"date\" min=\"" +
+            min +
+            "\" max=\"" +
+            max +
+            "\" value=\"" +
+            max +
+            "\" required />" +
+            "<button type=\"submit\">Show logs</button>" +
+            "</form>" +
+            "<p class=\"hint\">Available date range: " +
+            escapeHtml(min) +
+            " to " +
+            escapeHtml(max) +
+            " (UTC).</p>";
     }
 
     /**
@@ -645,19 +643,17 @@ public class LogsBrowserServlet extends HttpServlet
         final String previousDateLabel = previousDate == null ? "" : formatHumanDate(previousDate, locale);
         final String nextDateLabel = nextDate == null ? "" : formatHumanDate(nextDate, locale);
 
-        final StringBuilder result = new StringBuilder();
-        result.append("<nav class=\"day-nav\" aria-label=\"Day navigation\">");
-        result.append(previousDate == null
-            ? "<span class=\"day-nav-disabled\">&larr; Previous day</span>"
-            : "<a class=\"day-nav-link\" href=\"" + buildDatePath(basePath, serviceName, roomName, previousDate) + "\">&larr; " + escapeHtml(previousDateLabel) + "</a>");
-        result.append("<span class=\"day-nav-current\">")
-            .append(escapeHtml(selectedDateLabel))
-            .append("</span>");
-        result.append(nextDate == null
-            ? "<span class=\"day-nav-disabled\">Next day &rarr;</span>"
-            : "<a class=\"day-nav-link\" href=\"" + buildDatePath(basePath, serviceName, roomName, nextDate) + "\">" + escapeHtml(nextDateLabel) + " &rarr;</a>");
-        result.append("</nav>");
-        return result.toString();
+        return "<nav class=\"day-nav\" aria-label=\"Day navigation\">" +
+            (previousDate == null
+                ? "<span class=\"day-nav-disabled\">&larr; Previous day</span>"
+                : "<a class=\"day-nav-link\" href=\"" + buildDatePath(basePath, serviceName, roomName, previousDate) + "\">&larr; " + escapeHtml(previousDateLabel) + "</a>") +
+            "<span class=\"day-nav-current\">" +
+            escapeHtml(selectedDateLabel) +
+            "</span>" +
+            (nextDate == null
+                ? "<span class=\"day-nav-disabled\">Next day &rarr;</span>"
+                : "<a class=\"day-nav-link\" href=\"" + buildDatePath(basePath, serviceName, roomName, nextDate) + "\">" + escapeHtml(nextDateLabel) + " &rarr;</a>") +
+            "</nav>";
     }
 
     /**

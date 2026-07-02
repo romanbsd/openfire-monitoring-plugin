@@ -20,21 +20,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
-import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -51,7 +46,6 @@ import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.orsonpdf.PDFDocument;
 import com.orsonpdf.PDFGraphics2D;
 import com.orsonpdf.Page;
-import org.dom4j.DocumentException;
 import org.jfree.chart.JFreeChart;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.ConversationUtils;
@@ -71,7 +65,7 @@ public class GraphServlet extends HttpServlet {
     private StatsViewer statsViewer;
 
     @Override
-    public void init() throws ServletException {
+    public void init() {
         // load dependencies
         MonitoringPlugin plugin =
                 (MonitoringPlugin) XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME).get();
@@ -80,7 +74,7 @@ public class GraphServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // retrieve parameters
         String statisticKey = request.getParameter("stat");
         String timePeriod = request.getParameter("timeperiod");
@@ -100,12 +94,10 @@ public class GraphServlet extends HttpServlet {
             if (request.getParameter("pdf").equalsIgnoreCase("all")) {
                 String[] statKeys = statsViewer.getAllHighLevelStatKeys();
                 List<String> statList = Arrays.asList(statKeys);
-                Collections.sort(statList, new Comparator<String>() {
-                    public int compare(String stat1, String stat2) {
-                        String statName1 = statsViewer.getStatistic(stat1)[0].getName();
-                        String statName2 = statsViewer.getStatistic(stat2)[0].getName();
-                        return statName1.toLowerCase().compareTo(statName2.toLowerCase());
-                    }
+                statList.sort((stat1, stat2) -> {
+                    String statName1 = statsViewer.getStatistic(stat1)[0].getName();
+                    String statName2 = statsViewer.getStatistic(stat2)[0].getName();
+                    return statName1.toLowerCase().compareTo(statName2.toLowerCase());
                 });
                 charts = new JFreeChart[statList.size()];
                 stats = new Statistic[statList.size()];
@@ -137,9 +129,7 @@ public class GraphServlet extends HttpServlet {
         }
     }
 
-    private void writePDFContent(HttpServletRequest request, HttpServletResponse response, JFreeChart[] charts, Statistic[] stats, long starttime, long endtime, int width, int height)
-            throws IOException
-    {
+    private void writePDFContent(HttpServletRequest request, HttpServletResponse response, JFreeChart[] charts, Statistic[] stats, long starttime, long endtime, int width, int height) {
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
              final PdfWriter writer = new PdfWriter(baos);
              final PdfDocument pdfDocument = new PdfDocument(writer)

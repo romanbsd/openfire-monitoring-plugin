@@ -6,7 +6,6 @@ import com.reucon.openfire.plugin.archive.model.ArchivedMessage.Direction;
 import com.reucon.openfire.plugin.archive.model.Conversation;
 import com.reucon.openfire.plugin.archive.model.Participant;
 import com.reucon.openfire.plugin.archive.xep0059.XmppResultSet;
-import org.dom4j.DocumentException;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.archive.ConversationManager;
 import org.jivesoftware.openfire.index.LuceneIndexer;
@@ -147,7 +146,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
             xmppResultSet.setFirstIndex(firstIndex);
         }
 
-        if (whereSB.length() != 0) {
+        if (!whereSB.isEmpty()) {
             querySB.append(" WHERE ").append(whereSB);
         }
         querySB.append(SELECT_CONVERSATIONS_GROUP_BY);
@@ -168,7 +167,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
             pstmt = con.prepareStatement(querySB.toString());
             bindConversationParameters(startDate, endDate, owner, with, pstmt);
             rs = pstmt.executeQuery();
-            Log.debug("findConversations: SELECT_CONVERSATIONS: " + pstmt.toString());
+            Log.debug("findConversations: SELECT_CONVERSATIONS: {}", pstmt);
             while (rs.next()) {
                 Conversation conv = extractConversation(rs);
                 conversations.put(conv.getId(), conv);
@@ -179,7 +178,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
             DbConnectionManager.closeConnection(rs, pstmt, con);
         }
 
-        if (xmppResultSet != null && conversations.size() > 0) {
+        if (xmppResultSet != null && !conversations.isEmpty()) {
             xmppResultSet.setFirst( String.valueOf( conversations.firstKey() ));
             xmppResultSet.setLast( String.valueOf( conversations.lastKey() ));
         }
@@ -187,7 +186,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
     }
 
     private void appendWhere(StringBuilder sb, String... fragments) {
-        if (sb.length() != 0) {
+        if (!sb.isEmpty()) {
             sb.append(" AND ");
         }
 
@@ -200,7 +199,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
         StringBuilder querySB;
 
         querySB = new StringBuilder(COUNT_CONVERSATIONS);
-        if (whereClause != null && whereClause.length() != 0) {
+        if (whereClause != null && !whereClause.isEmpty()) {
             querySB.append(" WHERE ").append(whereClause);
         }
 
@@ -230,7 +229,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
 
         querySB = new StringBuilder(COUNT_CONVERSATIONS);
         querySB.append(" WHERE ");
-        if (whereClause != null && whereClause.length() != 0) {
+        if (whereClause != null && !whereClause.isEmpty()) {
             querySB.append(whereClause);
             querySB.append(" AND ");
         }
@@ -450,7 +449,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
                 pstmt.setLong(i++, dateToMillis(start));
             }
             rs = pstmt.executeQuery();
-            Log.debug("getConversation: SELECT_CONVERSATIONS: " + pstmt.toString());
+            Log.debug("getConversation: SELECT_CONVERSATIONS: {}", pstmt);
             if (rs.next()) {
                 conversation = extractConversation(rs);
             } else {
@@ -464,7 +463,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
             pstmt.setLong(1, conversation.getId());
 
             rs = pstmt.executeQuery();
-            Log.debug("getConversation: SELECT_PARTICIPANTS_BY_CONVERSATION: " + pstmt.toString());
+            Log.debug("getConversation: SELECT_PARTICIPANTS_BY_CONVERSATION: {}", pstmt);
 
             while (rs.next()) {
                 for (Participant participant : extractParticipant(rs)) {
@@ -480,7 +479,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
             pstmt.setString(2, conversation.getOwnerBareJid().toString());
 
             rs = pstmt.executeQuery();
-            Log.debug("getConversation: SELECT_MESSAGES_BY_CONVERSATION: " + pstmt.toString());
+            Log.debug("getConversation: SELECT_MESSAGES_BY_CONVERSATION: {}", pstmt);
 
             while (rs.next()) {
                 ArchivedMessage message;
@@ -488,7 +487,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
                 message = extractMessage(owner, rs);
                 conversation.addMessage(message);
             }
-        } catch (SQLException | DocumentException sqle) {
+        } catch (SQLException sqle) {
             Log.error("Error selecting conversation", sqle);
         } finally {
             DbConnectionManager.closeConnection(rs, pstmt, con);
@@ -506,7 +505,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
         String room = rs.getString("room");
         String result = null;
         if (bareJid != null && fromJid != null && toJid != null) {
-            if (room != null && !room.equals("")) {
+            if (room != null && !room.isEmpty()) {
                 result = room;
             } else if (fromJid.contains(bareJid)) { // older versions of the database put the full jid in 'fromJID'. Using 'contains' (instead of 'equals') will also match those.
                 result = toJid + ( toJIDResource == null || toJIDResource.isEmpty() ? "" : "/" + toJIDResource );
@@ -556,7 +555,7 @@ public class JdbcPersistenceManager implements PersistenceManager {
         return participants;
     }
 
-    static ArchivedMessage extractMessage(final JID owner, ResultSet rs) throws SQLException, DocumentException {
+    static ArchivedMessage extractMessage(final JID owner, ResultSet rs) throws SQLException {
         Date time = millisToDate(rs.getLong("sentDate"));
         String body = rs.getString("body");
         String stanza = rs.getString("stanza");
@@ -617,15 +616,12 @@ public class JdbcPersistenceManager implements PersistenceManager {
         } catch (SQLException ex) {
             Log.warn("SQL failure while trying to get message with ID {} from the archive of {}.", messageId, owner, ex);
             return null;
-        } catch (DocumentException ex) {
-            Log.warn("Failure to parse 'stanza' value as XMPP for the message with ID {} from the archive of {}.", messageId, owner, ex);
-            return null;
         } finally {
             DbConnectionManager.closeConnection(rs, pstmt, connection);
         }
     }
 
-    static protected ArchivedMessage asArchivedMessage(JID owner, String fromJID, String fromJIDResource, String toJID, String toJIDResource, Date sentDate, String body, String stanza, Long id) throws DocumentException {
+    static protected ArchivedMessage asArchivedMessage(JID owner, String fromJID, String fromJIDResource, String toJID, String toJIDResource, Date sentDate, String body, String stanza, Long id) {
         final JID from = new JID(fromJID + ( fromJIDResource == null || fromJIDResource.isEmpty() ? "" : "/" + fromJIDResource ));
         final JID to = new JID(toJID + ( toJIDResource == null || toJIDResource.isEmpty() ? "" : "/" + toJIDResource ));
 

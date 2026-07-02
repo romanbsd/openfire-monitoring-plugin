@@ -3,7 +3,6 @@ package com.reucon.openfire.plugin.archive.xep0136;
 import java.util.ArrayList;
 
 import org.jivesoftware.openfire.XMPPServer;
-import org.jivesoftware.openfire.handler.IQHandler;
 
 import com.reucon.openfire.plugin.archive.xep.AbstractXepSupport;
 
@@ -19,7 +18,7 @@ public class Xep0136Support extends AbstractXepSupport {
     public Xep0136Support(XMPPServer server) {
         super(server, NAMESPACE_AUTO,IQ_NAMESPACE, "XEP-0136 IQ Dispatcher", false);
 
-        iqHandlers = new ArrayList<IQHandler>();
+        iqHandlers = new ArrayList<>();
 
         // support for #ns-pref
         // iqHandlers.add(new IQPrefHandler());

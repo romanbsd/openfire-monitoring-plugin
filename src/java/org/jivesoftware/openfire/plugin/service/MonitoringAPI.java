@@ -15,9 +15,9 @@ import org.jivesoftware.openfire.reporting.stats.StatsAction;
 @Produces(MediaType.APPLICATION_JSON)
 public class MonitoringAPI {
     
-    private StatsAction statsAction = new StatsAction();
+    private final StatsAction statsAction = new StatsAction();
     
-    private ConversationUtils conversationUtils = new ConversationUtils();
+    private final ConversationUtils conversationUtils = new ConversationUtils();
 
     @GET
     @Path("/stats/updated")

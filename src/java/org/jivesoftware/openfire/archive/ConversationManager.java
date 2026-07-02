@@ -91,10 +91,10 @@ public class ConversationManager implements ComponentEventListener{
 
     public static final String CONVERSATIONS_KEY = "conversations";
 
-    private ConversationEventsQueue conversationEventsQueue;
-    private TaskEngine taskEngine;
+    private final ConversationEventsQueue conversationEventsQueue;
+    private final TaskEngine taskEngine;
 
-    private Map<String, Conversation> conversations = new ConcurrentHashMap<>();
+    private final Map<String, Conversation> conversations = new ConcurrentHashMap<>();
     private boolean metadataArchivingEnabled;
     /**
      * Flag that indicates if messages of one-to-one chats should be archived.
@@ -123,49 +123,49 @@ public class ConversationManager implements ComponentEventListener{
     /**
      * Keeps the address of those components that provide the gateway service.
      */
-    private List<String> gateways;
+    private final List<String> gateways;
     private XMPPServerInfo serverInfo;
 
     private Archiver<Conversation> conversationArchiver;
     private Archiver<ArchivedMessage> messageArchiver;
     private Archiver<RoomParticipant> participantArchiver;
 
-    public static SystemProperty<Boolean> METADATA_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
+    public static final SystemProperty<Boolean> METADATA_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.metadataArchiving")
         .setDefaultValue(true)
         .setDynamic(true)
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Boolean> MESSAGE_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
+    public static final SystemProperty<Boolean> MESSAGE_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.messageArchiving")
         .setDefaultValue(true)
         .setDynamic(true)
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Boolean> ROOM_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
+    public static final SystemProperty<Boolean> ROOM_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.roomArchiving")
         .setDefaultValue(true)
         .setDynamic(true)
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Boolean> ROOM_STANZA_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
+    public static final SystemProperty<Boolean> ROOM_STANZA_ARCHIVING_ENABLED = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.roomArchivingStanzas")
         .setDefaultValue(true)
         .setDynamic(true)
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<String> ROOMS_ARCHIVED = SystemProperty.Builder.ofType(String.class)
+    public static final SystemProperty<String> ROOMS_ARCHIVED = SystemProperty.Builder.ofType(String.class)
         .setKey("conversation.roomsArchived")
         .setDefaultValue("")
         .setDynamic(true)
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Duration> IDLE_TIME = SystemProperty.Builder.ofType(Duration.class)
+    public static final SystemProperty<Duration> IDLE_TIME = SystemProperty.Builder.ofType(Duration.class)
         .setKey("conversation.idleTime")
         .setDefaultValue(DEFAULT_IDLE_TIME)
         .setChronoUnit(ChronoUnit.MINUTES)
@@ -173,7 +173,7 @@ public class ConversationManager implements ComponentEventListener{
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Duration> MAX_TIME = SystemProperty.Builder.ofType(Duration.class)
+    public static final SystemProperty<Duration> MAX_TIME = SystemProperty.Builder.ofType(Duration.class)
         .setKey("conversation.maxTime")
         .setDefaultValue(DEFAULT_MAX_TIME)
         .setChronoUnit(ChronoUnit.MINUTES)
@@ -181,7 +181,7 @@ public class ConversationManager implements ComponentEventListener{
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
     
-    public static SystemProperty<Duration> MAX_AGE = SystemProperty.Builder.ofType(Duration.class)
+    public static final SystemProperty<Duration> MAX_AGE = SystemProperty.Builder.ofType(Duration.class)
         .setKey("conversation.maxAge")
         .setDefaultValue(DEFAULT_MAX_AGE)
         .setChronoUnit(ChronoUnit.DAYS)
@@ -189,7 +189,7 @@ public class ConversationManager implements ComponentEventListener{
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    public static SystemProperty<Duration> MAX_RETRIEVABLE = SystemProperty.Builder.ofType(Duration.class)
+    public static final SystemProperty<Duration> MAX_RETRIEVABLE = SystemProperty.Builder.ofType(Duration.class)
         .setKey("conversation.maxRetrievable")
         .setDefaultValue(DEFAULT_MAX_RETRIEVABLE)
         .setChronoUnit(ChronoUnit.DAYS)
@@ -281,8 +281,7 @@ public class ConversationManager implements ComponentEventListener{
                         Collection<Conversation> conversations = archiveSearcher.search(search);
                         int conversationDeleted = 0;
                         for (Conversation conversation : conversations) {
-                            Log.debug("Deleting: " + conversation.getConversationID() + " with date: " + conversation.getStartDate()
-                                    + " older than: " + maxAgeDate);
+                            Log.debug("Deleting: {} with date: {} older than: {}", conversation.getConversationID(), conversation.getStartDate(), maxAgeDate);
                             pstmt1.setLong(1, conversation.getConversationID());
                             pstmt1.execute();
                             pstmt2.setLong(1, conversation.getConversationID());
@@ -292,7 +291,7 @@ public class ConversationManager implements ComponentEventListener{
                             conversationDeleted++;
                         }
                         if (conversationDeleted > 0) {
-                            Log.info("Deleted " + conversationDeleted + " conversations with date older than: " + maxAgeDate);
+                            Log.info("Deleted {} conversations with date older than: {}", conversationDeleted, maxAgeDate);
                         }
                     } catch (Exception e) {
                         Log.error(e.getMessage(), e);
@@ -315,10 +314,6 @@ public class ConversationManager implements ComponentEventListener{
 
             public Type getStatType() {
                 return Type.amount;
-            }
-
-            public RepresentationSemantics getRepresentationSemantics() {
-                return RepresentationSemantics.SNAPSHOT;
             }
 
             public String getDescription() {
@@ -1008,12 +1003,9 @@ public class ConversationManager implements ComponentEventListener{
         }
 
         // If not a local JID, always record it.
-        if (!jid.getDomain().endsWith(serverInfo.getXMPPDomain())) {
-            return true;
-        }
+        return !jid.getDomain().endsWith(serverInfo.getXMPPDomain());
 
         // Otherwise return false.
-        return false;
     }
 
     /**
@@ -1166,8 +1158,7 @@ public class ConversationManager implements ComponentEventListener{
 
         // Check all other cluster nodes.
         final Collection<Duration> objects = CacheFactory.doSynchronousClusterTask( new GetConversationsWriteETATask( instant ), false );
-        final Duration maxDuration = objects.stream().max( Comparator.naturalOrder() ).orElse( Duration.ZERO );
-        return maxDuration;
+        return objects.stream().max( Comparator.naturalOrder() ).orElse( Duration.ZERO );
     }
 
     /**
@@ -1191,8 +1182,8 @@ public class ConversationManager implements ComponentEventListener{
         }
 
         // Each muc-service writes it's own messages.
-        final Stream<Archiver> mucService = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatServices().stream().map( MultiUserChatService::getArchiver );
-        final Stream<Archiver> monitoring = Stream.of( conversationArchiver, messageArchiver, participantArchiver );
+        final Stream<Archiver<?>> mucService = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatServices().stream().map( MultiUserChatService::getArchiver );
+        final Stream<Archiver<?>> monitoring = Stream.of( conversationArchiver, messageArchiver, participantArchiver );
 
         return Stream.concat( mucService, monitoring )
             .map( archiver -> archiver.availabilityETAOnLocalNode( instant ) )
@@ -1205,14 +1196,14 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class ConversationArchivingRunnable extends Archiver<Conversation>
     {
-        public static SystemProperty<Integer> CONVERSATION_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        public static final SystemProperty<Integer> CONVERSATION_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.conversation.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> CONVERSATION_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> CONVERSATION_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.conversation.max-purge-interval")
             .setDefaultValue(Duration.ofMillis(1000))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1220,7 +1211,7 @@ public class ConversationManager implements ComponentEventListener{
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> CONVERSATION_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> CONVERSATION_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.conversation.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1288,14 +1279,14 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class MessageArchivingRunnable extends Archiver<ArchivedMessage>
     {
-        public static SystemProperty<Integer> MESSAGE_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        public static final SystemProperty<Integer> MESSAGE_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.message.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> MESSAGE_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> MESSAGE_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.message.max-purge-interval")
             .setDefaultValue(Duration.ofMillis(1000))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1303,7 +1294,7 @@ public class ConversationManager implements ComponentEventListener{
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> MESSAGE_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> MESSAGE_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.message.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1380,14 +1371,14 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class ParticipantArchivingRunnable extends Archiver<RoomParticipant>
     {
-        public static SystemProperty<Integer> PARTICIPANT_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        public static final SystemProperty<Integer> PARTICIPANT_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.participant.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> PARTICIPANT_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> PARTICIPANT_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.participant.max-purge-interval")
             .setDefaultValue(Duration.ofMillis(1000))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1395,7 +1386,7 @@ public class ConversationManager implements ComponentEventListener{
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static SystemProperty<Duration> PARTICIPANT_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        public static final SystemProperty<Duration> PARTICIPANT_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.participant.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1466,96 +1457,104 @@ public class ConversationManager implements ComponentEventListener{
     private class ConversationPropertyListener implements PropertyEventListener {
 
         public void propertySet(String property, Map<String, Object> params) {
-            if (property.equals("conversation.metadataArchiving")) {
-                String value = (String) params.get("value");
-                metadataArchivingEnabled = Boolean.valueOf(value);
-            } else if (property.equals("conversation.messageArchiving")) {
-                String value = (String) params.get("value");
-                messageArchivingEnabled = Boolean.valueOf(value);
-                // Force metadata archiving enabled on if message archiving on.
-                if (messageArchivingEnabled) {
-                    metadataArchivingEnabled = true;
+            switch (property) {
+                case "conversation.metadataArchiving" -> {
+                    String value = (String) params.get("value");
+                    metadataArchivingEnabled = Boolean.parseBoolean(value);
                 }
-            } else if (property.equals("conversation.roomArchiving")) {
-                String value = (String) params.get("value");
-                roomArchivingEnabled = Boolean.valueOf(value);
-                // Force metadata archiving enabled on if message archiving on.
-                if (roomArchivingEnabled) {
-                    metadataArchivingEnabled = true;
+                case "conversation.messageArchiving" -> {
+                    String value = (String) params.get("value");
+                    messageArchivingEnabled = Boolean.parseBoolean(value);
+                    // Force metadata archiving enabled on if message archiving on.
+                    if (messageArchivingEnabled) {
+                        metadataArchivingEnabled = true;
+                    }
                 }
-            } else if( property.equals( "conversation.roomArchivingStanzas" ) ) {
-                String value = (String) params.get( "value" );
-                roomArchivingStanzasEnabled = Boolean.valueOf( value );
-            } else if (property.equals("conversation.roomsArchived")) {
-                String value = (String) params.get("value");
-                roomsArchived = StringUtils.stringToCollection(value);
-            } else if (property.equals("conversation.idleTime")) {
-                Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
-                try {
-                    idleTime = value;
-                } catch (Exception e) {
-                    Log.error(e.getMessage(), e);
-                    idleTime = DEFAULT_IDLE_TIME;
+                case "conversation.roomArchiving" -> {
+                    String value = (String) params.get("value");
+                    roomArchivingEnabled = Boolean.parseBoolean(value);
+                    // Force metadata archiving enabled on if message archiving on.
+                    if (roomArchivingEnabled) {
+                        metadataArchivingEnabled = true;
+                    }
                 }
-            } else if (property.equals("conversation.maxTime")) {
-                Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
-                try {
-                    maxTime = value;
-                } catch (Exception e) {
-                    Log.error(e.getMessage(), e);
-                    maxTime = DEFAULT_MAX_TIME;
+                case "conversation.roomArchivingStanzas" -> {
+                    String value = (String) params.get("value");
+                    roomArchivingStanzasEnabled = Boolean.parseBoolean(value);
                 }
-            } else if (property.equals("conversation.maxRetrievable")) {
-                Duration value = Duration.ofDays(Long.parseLong((String) params.get("value")));
-                try {
-                    maxRetrievable = value;
-                } catch (Exception e) {
-                    Log.error(e.getMessage(), e);
-                    maxRetrievable = DEFAULT_MAX_RETRIEVABLE;
+                case "conversation.roomsArchived" -> {
+                    String value = (String) params.get("value");
+                    roomsArchived = StringUtils.stringToCollection(value);
                 }
-            } else if (property.equals("conversation.maxAge")) {
-                Duration value = Duration.ofDays(Long.parseLong((String) params.get("value")));
-                try {
-                    maxAge = value;
-                } catch (Exception e) {
-                    Log.error(e.getMessage(), e);
-                    maxAge = DEFAULT_MAX_AGE;
+                case "conversation.idleTime" -> {
+                    Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
+                    try {
+                        idleTime = value;
+                    } catch (Exception e) {
+                        Log.error(e.getMessage(), e);
+                        idleTime = DEFAULT_IDLE_TIME;
+                    }
                 }
-            } else if (property.equals("conversation.maxTimeDebug")) {
-                Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
-                try {
-                    Log.info("Monitoring plugin max time overridden (as used by userCreation plugin)");
-                    maxTime = value;
-                } catch (Exception e) {
-                    Log.error(e.getMessage(), e);
-                    Log.info("Monitoring plugin max time reset back to " + DEFAULT_MAX_TIME + " minutes");
-                    maxTime = DEFAULT_MAX_TIME;
+                case "conversation.maxTime" -> {
+                    Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
+                    try {
+                        maxTime = value;
+                    } catch (Exception e) {
+                        Log.error(e.getMessage(), e);
+                        maxTime = DEFAULT_MAX_TIME;
+                    }
+                }
+                case "conversation.maxRetrievable" -> {
+                    Duration value = Duration.ofDays(Long.parseLong((String) params.get("value")));
+                    try {
+                        maxRetrievable = value;
+                    } catch (Exception e) {
+                        Log.error(e.getMessage(), e);
+                        maxRetrievable = DEFAULT_MAX_RETRIEVABLE;
+                    }
+                }
+                case "conversation.maxAge" -> {
+                    Duration value = Duration.ofDays(Long.parseLong((String) params.get("value")));
+                    try {
+                        maxAge = value;
+                    } catch (Exception e) {
+                        Log.error(e.getMessage(), e);
+                        maxAge = DEFAULT_MAX_AGE;
+                    }
+                }
+                case "conversation.maxTimeDebug" -> {
+                    Duration value = Duration.ofMinutes(Long.parseLong((String) params.get("value")));
+                    try {
+                        Log.info("Monitoring plugin max time overridden (as used by userCreation plugin)");
+                        maxTime = value;
+                    } catch (Exception e) {
+                        Log.error(e.getMessage(), e);
+                        Log.info("Monitoring plugin max time reset back to {} minutes", DEFAULT_MAX_TIME);
+                        maxTime = DEFAULT_MAX_TIME;
+                    }
                 }
             }
         }
 
         public void propertyDeleted(String property, Map<String, Object> params) {
-            if (property.equals("conversation.metadataArchiving")) {
-                setMetadataArchivingEnabled(METADATA_ARCHIVING_ENABLED.getDefaultValue());
-            } else if (property.equals("conversation.messageArchiving")) {
-                setMessageArchivingEnabled(MESSAGE_ARCHIVING_ENABLED.getDefaultValue());
-            } else if (property.equals("conversation.roomArchiving")) {
-                setRoomArchivingEnabled(ROOM_ARCHIVING_ENABLED.getDefaultValue());
-            } else if (property.equals("conversation.roomArchivingStanzas")) {
-                setRoomArchivingStanzasEnabled(ROOM_STANZA_ARCHIVING_ENABLED.getDefaultValue());
-            } else if (property.equals("conversation.roomsArchived")) {
-                setRoomsArchived(StringUtils.stringToCollection(ROOMS_ARCHIVED.getDefaultValue()));
-            } else if (property.equals("conversation.idleTime")) {
-                setIdleTime(IDLE_TIME.getDefaultValue());
-            } else if (property.equals("conversation.maxTime")) {
-                setMaxTime(MAX_TIME.getDefaultValue());
-            } else if (property.equals("conversation.maxAge")) {
-                setMaxAge(MAX_AGE.getDefaultValue());
-            } else if (property.equals("conversation.maxRetrievable")) {
-                setMaxRetrievable(MAX_RETRIEVABLE.getDefaultValue());
-            }  else if (property.equals("conversation.maxTimeDebug")) {
-                Log.info("Monitoring plugin max time reset back to " + DEFAULT_MAX_TIME + " minutes");
-                setMaxTime(MAX_TIME.getDefaultValue());
+            switch (property) {
+                case "conversation.metadataArchiving" ->
+                    setMetadataArchivingEnabled(METADATA_ARCHIVING_ENABLED.getDefaultValue());
+                case "conversation.messageArchiving" ->
+                    setMessageArchivingEnabled(MESSAGE_ARCHIVING_ENABLED.getDefaultValue());
+                case "conversation.roomArchiving" -> setRoomArchivingEnabled(ROOM_ARCHIVING_ENABLED.getDefaultValue());
+                case "conversation.roomArchivingStanzas" ->
+                    setRoomArchivingStanzasEnabled(ROOM_STANZA_ARCHIVING_ENABLED.getDefaultValue());
+                case "conversation.roomsArchived" ->
+                    setRoomsArchived(StringUtils.stringToCollection(ROOMS_ARCHIVED.getDefaultValue()));
+                case "conversation.idleTime" -> setIdleTime(IDLE_TIME.getDefaultValue());
+                case "conversation.maxTime" -> setMaxTime(MAX_TIME.getDefaultValue());
+                case "conversation.maxAge" -> setMaxAge(MAX_AGE.getDefaultValue());
+                case "conversation.maxRetrievable" -> setMaxRetrievable(MAX_RETRIEVABLE.getDefaultValue());
+                case "conversation.maxTimeDebug" -> {
+                    Log.info("Monitoring plugin max time reset back to {} minutes", DEFAULT_MAX_TIME);
+                    setMaxTime(MAX_TIME.getDefaultValue());
+                }
             }
         }
 

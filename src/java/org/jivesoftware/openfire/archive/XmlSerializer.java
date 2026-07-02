@@ -29,14 +29,12 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The XmlSerializer assists in converting selected Monitoring plugin objects from and to XML representation.
@@ -108,7 +106,7 @@ public class XmlSerializer {
      */
     @Nullable
     public Object unmarshall(@Nullable String object) throws IOException {
-        if (object != null && !"".equals(object)) {
+        if (object != null && !object.isEmpty()) {
             StringReader reader = new StringReader(object);
 
             try {

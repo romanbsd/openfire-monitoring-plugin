@@ -16,7 +16,6 @@ package com.reucon.openfire.plugin.archive.impl;
 
 import com.reucon.openfire.plugin.archive.model.ArchivedMessage;
 import com.reucon.openfire.plugin.archive.xep0313.IQQueryHandler;
-import org.dom4j.DocumentException;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.slf4j.Logger;
@@ -126,8 +125,6 @@ public class PaginatedMucMessageDatabaseQuery extends AbstractPaginatedMamMucQue
             if (!IQQueryHandler.IGNORE_RETRIEVAL_EXCEPTIONS.getValue()) {
                 throw new DataRetrievalException(e);
             }
-        } catch (DocumentException e) {
-            Log.error("Unable to parse 'stanza' value as valid XMPP for room {}", this.archiveOwner, e);
         } finally {
             DbConnectionManager.closeConnection(rs, pstmt, connection);
         }

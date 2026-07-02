@@ -1,7 +1,6 @@
 package com.reucon.openfire.plugin.archive.xep0136;
 
 import org.dom4j.Element;
-import org.jivesoftware.openfire.auth.UnauthorizedException;
 import org.jivesoftware.openfire.disco.ServerFeaturesProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +10,6 @@ import com.reucon.openfire.plugin.archive.xep.AbstractIQHandler;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Message Archiving Preferences Handler.
@@ -27,9 +25,7 @@ public class IQPrefHandler extends AbstractIQHandler implements ServerFeaturesPr
         super("Message Archiving Preferences Handler", "pref", NAMESPACE);
     }
 
-    @SuppressWarnings("unchecked")
-    public IQ handleIQ(IQ packet) throws UnauthorizedException
-    {
+    public IQ handleIQ(IQ packet) {
         IQ reply = IQ.createResultIQ(packet);
         Element prefRequest = packet.getChildElement();
 
@@ -45,7 +41,7 @@ public class IQPrefHandler extends AbstractIQHandler implements ServerFeaturesPr
             defaultItem.attribute("expire");
         }
 
-        for (Element item : (List<Element>) prefRequest.elements("item"))
+        for (Element item : prefRequest.elements("item"))
         {
             // User requests to set modes for a contact
             item.attribute("jid");
@@ -54,7 +50,7 @@ public class IQPrefHandler extends AbstractIQHandler implements ServerFeaturesPr
             item.attribute("expire");
         }
 
-        for (Element method : (List<Element>) prefRequest.elements("method"))
+        for (Element method : prefRequest.elements("method"))
         {
             // User requests to set archiving method preferences
             method.attribute("type");
@@ -66,7 +62,7 @@ public class IQPrefHandler extends AbstractIQHandler implements ServerFeaturesPr
 
     public Iterator<String> getFeatures()
     {
-        ArrayList<String> features = new ArrayList<String>();
+        ArrayList<String> features = new ArrayList<>();
         features.add(NAMESPACE_PREF);
         return features.iterator();
     }

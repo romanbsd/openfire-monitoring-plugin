@@ -126,7 +126,7 @@ public class Conversation
 
     public boolean isStale(int conversationTimeout)
     {
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
         return end.getTime() + conversationTimeout * 60L * 1000L < now;
     }

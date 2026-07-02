@@ -52,7 +52,7 @@ public class TaskEngine {
 
     private Timer timer;
     private ExecutorService executor;
-    private final Map<TimerTask, TimerTaskWrapper> wrappedTasks = new HashMap<TimerTask, TimerTaskWrapper>();
+    private final Map<TimerTask, TimerTaskWrapper> wrappedTasks = new HashMap<>();
 
     /**
      * Constructs a new task engine.
@@ -310,7 +310,7 @@ public class TaskEngine {
      */
     private class TimerTaskWrapper extends TimerTask {
 
-        private TimerTask task;
+        private final TimerTask task;
 
         public TimerTaskWrapper(TimerTask task) {
             this.task = task;

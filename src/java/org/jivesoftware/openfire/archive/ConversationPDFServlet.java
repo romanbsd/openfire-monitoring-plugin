@@ -18,7 +18,6 @@ package org.jivesoftware.openfire.archive;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,12 +35,12 @@ public class ConversationPDFServlet extends HttpServlet {
     private static final Logger Log = LoggerFactory.getLogger(ConversationPDFServlet.class);
     
     @Override
-    public void init() throws ServletException {
+    public void init() {
 
     }
 
     @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         long conversationID = ParamUtils.getLongParameter(request, "conversationID", -1);
         if (conversationID == -1) {
             return;

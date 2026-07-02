@@ -41,7 +41,7 @@ public class RrdSqlBackend extends RrdBackend {
     // this is the place where our RRD bytes will be stored
     private byte[] buffer = null;
     // When readOnly then the SQL DB is not updated
-    private boolean readOnly;
+    private final boolean readOnly;
 
     public static void importRRD(String id, File rrdFile) throws IOException {
         // Read content from file
@@ -88,7 +88,7 @@ public class RrdSqlBackend extends RrdBackend {
             }
         }
         catch (Exception e) {
-            Log.error("Error while accessing information in database: " + e);
+            Log.error("Error while accessing information in database: {}", String.valueOf(e));
         }
         finally {
             DbConnectionManager.closeStatement(insertStmt);
@@ -96,7 +96,7 @@ public class RrdSqlBackend extends RrdBackend {
         }
     }
 
-    RrdSqlBackend(String id, boolean readOnly) throws IOException {
+    RrdSqlBackend(String id, boolean readOnly) {
         super(id);
         this.readOnly = readOnly;
         Connection con = null;
@@ -125,7 +125,7 @@ public class RrdSqlBackend extends RrdBackend {
             }
         }
         catch (Exception e) {
-            Log.error("Error while accessing information in database: " + e);
+            Log.error("Error while accessing information in database: {}", String.valueOf(e));
         }
         finally {
             DbConnectionManager.closeStatement(insertStmt);
@@ -138,8 +138,8 @@ public class RrdSqlBackend extends RrdBackend {
     @Override
     protected void write(long offset, byte[] b) {
         int pos = (int) offset;
-        for(int i = 0; i < b.length; i++) {
-            buffer[pos++] = b[i];
+        for (byte value : b) {
+            buffer[pos++] = value;
         }
     }
 
@@ -156,7 +156,7 @@ public class RrdSqlBackend extends RrdBackend {
     // returns the RRD size (since all RRD bytes are
     // in the buffer, it is equal to the buffer length
     @Override
-    public long getLength() throws IOException {
+    public long getLength() {
         return buffer.length;
     }
 
@@ -176,7 +176,7 @@ public class RrdSqlBackend extends RrdBackend {
         }
     }
     // sends bytes in memory to the database
-    protected void sync() throws IOException {
+    protected void sync() {
         // RRD id is here
         String id = super.getPath();
         Connection con = null;
@@ -191,7 +191,7 @@ public class RrdSqlBackend extends RrdBackend {
             pstmt.executeUpdate();
         }
         catch (Exception e) {
-            Log.error("Error while updating information in database: " + e);
+            Log.error("Error while updating information in database: {}", String.valueOf(e));
         }
         finally {
             DbConnectionManager.closeConnection(rs, pstmt, con);
@@ -200,7 +200,7 @@ public class RrdSqlBackend extends RrdBackend {
 
     // checks if RRD with the given id already exists in the database
     // used from RrdSqlBackendFactory class
-    static boolean exists(String id) throws IOException {
+    static boolean exists(String id) {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -212,7 +212,7 @@ public class RrdSqlBackend extends RrdBackend {
             return rs.next();
         }
         catch (Exception e) {
-            Log.error("Error while accessing information in database: " + e);
+            Log.error("Error while accessing information in database: {}", String.valueOf(e));
         }
         finally {
             DbConnectionManager.closeConnection(rs, pstmt, con);
@@ -235,7 +235,7 @@ public class RrdSqlBackend extends RrdBackend {
             pstmt.execute();
         }
         catch (Exception e) {
-            Log.error("Error while purging empty RRD entries from database: " + e);
+            Log.error("Error while purging empty RRD entries from database: {}", String.valueOf(e));
         }
         finally {
             DbConnectionManager.closeConnection(pstmt, con);

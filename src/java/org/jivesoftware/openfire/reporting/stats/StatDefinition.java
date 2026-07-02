@@ -30,9 +30,9 @@ abstract class StatDefinition {
 
     private static final Logger Log = LoggerFactory.getLogger(StatDefinition.class);
 
-    private String dbPath;
-    private String datasourceName;
-    private Statistic stat;
+    private final String dbPath;
+    private final String datasourceName;
+    private final Statistic stat;
     public long lastSampleTime;
     public double lastSample;
 

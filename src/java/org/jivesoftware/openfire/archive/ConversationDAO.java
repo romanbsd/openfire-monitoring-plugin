@@ -35,7 +35,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -180,12 +179,12 @@ public class ConversationDAO {
             while (rs.next()) {
                 JID fromJID = new JID(rs.getString(1));
                 String fromJIDResource = rs.getString(2);
-                if (fromJIDResource != null && !"".equals(fromJIDResource)) {
+                if (fromJIDResource != null && !fromJIDResource.isEmpty()) {
                     fromJID = new JID(rs.getString(1) + "/" + fromJIDResource);
                 }
                 JID toJID = new JID(rs.getString(3));
                 String toJIDResource = rs.getString(4);
-                if (toJIDResource != null && !"".equals(toJIDResource)) {
+                if (toJIDResource != null && !toJIDResource.isEmpty()) {
                     toJID = new JID(rs.getString(3) + "/" + toJIDResource);
                 }
                 Date date = new Date(rs.getLong(5));
@@ -216,7 +215,7 @@ public class ConversationDAO {
                 }
                 for (ConversationParticipation participation : conversation.getParticipations(user)) {
                     if (participation.getJoined() == null) {
-                        Log.warn("Found muc participant with no join date in conversation: " + conversation.getConversationID());
+                        Log.warn("Found muc participant with no join date in conversation: {}", conversation.getConversationID());
                         continue;
                     }
                     JID jid = new JID(conversation.getRoom() + "/" + participation.getNickname());

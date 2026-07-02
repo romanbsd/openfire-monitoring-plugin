@@ -11,7 +11,6 @@ import org.jivesoftware.openfire.PacketRouter;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.ConversationManager;
 import org.jivesoftware.openfire.archive.MonitoringConstants;
-import org.jivesoftware.openfire.auth.UnauthorizedException;
 import org.jivesoftware.openfire.container.Plugin;
 import org.jivesoftware.openfire.disco.ServerFeaturesProvider;
 import org.jivesoftware.openfire.forward.Forwarded;
@@ -49,7 +48,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
     private static final Logger Log = LoggerFactory.getLogger(IQQueryHandler.class);
 
-    public static SystemProperty<Boolean> IGNORE_RETRIEVAL_EXCEPTIONS = SystemProperty.Builder.ofType(Boolean.class)
+    public static final SystemProperty<Boolean> IGNORE_RETRIEVAL_EXCEPTIONS = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("archive.ignore-retrieval-exceptions")
         .setDefaultValue(false)
         .setDynamic(true)
@@ -116,7 +115,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         super.destroy();
     }
 
-    public IQ handleIQ( final IQ packet ) throws UnauthorizedException {
+    public IQ handleIQ( final IQ packet ) {
 
         if(packet.getType().equals(IQ.Type.get)) {
             return buildSupportedFieldsResult(packet);
@@ -172,10 +171,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
         // Auth checking.
         if(room != null) {
-            boolean pass = false;
-            if (service.isSysadmin(requestor)) {
-                pass = true;
-            }
+            boolean pass = service.isSysadmin(requestor);
             final Affiliation aff = room.getAffiliation(requestor);
             if (aff != Affiliation.outcast) {
                 if (aff == Affiliation.owner || aff == Affiliation.admin) {
@@ -256,7 +252,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
         // OF-1200: make sure that data is flushed to the database before retrieving it.
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
-        if (!plugin.isPresent()) {
+        if (plugin.isEmpty()) {
             throw new IllegalStateException("Unable to handle IQ stanza. The Monitoring plugin does not appear to be loaded on this machine.");
         }
         final ConversationManager conversationManager = ((MonitoringPlugin)plugin.get()).getConversationManager();
@@ -356,7 +352,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         String endField = null;
         String textField = null;
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
-        if (!plugin.isPresent()) {
+        if (plugin.isEmpty()) {
             throw new IllegalStateException("Unable to retrieve messages. The Monitoring plugin does not appear to be loaded on this machine.");
         }
         final ConversationManager conversationManager = ((MonitoringPlugin)plugin.get()).getConversationManager();
@@ -471,8 +467,8 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 	                textField,
 	                queryRequest.getResultSet(),
                 	this.usesUniqueAndStableIDs());
-	        
-	        Log.debug("MAM: found: "+(result!=null?String.valueOf(result.size()):"0 (result==null)")+" items");
+
+            Log.debug("MAM: found: {} items", result != null ? String.valueOf(result.size()) : "0 (result==null)");
 	        
 	        return result;
         }
@@ -622,7 +618,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
     private List<String> getSupportedFieldVariables() {
         List<String> results = Arrays.asList("FORM_TYPE", "with", "start", "end");
         if (LuceneIndexer.ENABLED.getValue()) {
-            results = new ArrayList<String>(results);
+            results = new ArrayList<>(results);
             results.add("{urn:xmpp:fulltext:0}fulltext");
             results.add("withtext");
             results.add("search");

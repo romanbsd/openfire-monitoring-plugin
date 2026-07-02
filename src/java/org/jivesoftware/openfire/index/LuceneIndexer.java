@@ -29,6 +29,7 @@ import org.jivesoftware.openfire.archive.MonitoringConstants;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
 import org.jivesoftware.util.SystemProperty;
 import org.jivesoftware.util.XMLProperties;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,17 +42,15 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Scanner;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public abstract class LuceneIndexer
 {
     protected final Logger Log;
 
     private final int schemaVersion;
-    protected TaskEngine taskEngine;
+    protected final TaskEngine taskEngine;
     protected RebuildFuture rebuildFuture;
     private Path searchDir;
     private XMLProperties indexProperties;
@@ -538,14 +537,11 @@ public abstract class LuceneIndexer
             return percentageDone == 100;
         }
 
-        public Integer get() throws InterruptedException, ExecutionException
-        {
+        public Integer get() {
             return percentageDone;
         }
 
-        public Integer get( long timeout, TimeUnit unit ) throws InterruptedException,
-            ExecutionException, TimeoutException
-        {
+        public Integer get(long timeout, @NonNull TimeUnit unit ) {
             return percentageDone;
         }
 

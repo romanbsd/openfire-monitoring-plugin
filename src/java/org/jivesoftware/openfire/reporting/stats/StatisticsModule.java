@@ -23,11 +23,9 @@ import org.jivesoftware.openfire.SessionManager;
 import org.jivesoftware.openfire.archive.MonitoringConstants;
 import org.jivesoftware.openfire.interceptor.InterceptorManager;
 import org.jivesoftware.openfire.interceptor.PacketInterceptor;
-import org.jivesoftware.openfire.session.Session;
 import org.jivesoftware.openfire.stats.Statistic;
 import org.jivesoftware.openfire.stats.StatisticsManager;
 import org.jivesoftware.openfire.stats.i18nStatistic;
-import org.xmpp.packet.Packet;
 
 /**
  * Creates and manages Enteprise-specific statistics, specifically: <ul>
@@ -71,14 +69,10 @@ public class StatisticsModule {
         statisticsManager = StatisticsManager.getInstance();
 
         // Register a packet listener so that we can track packet traffic.
-        packetInterceptor = new PacketInterceptor() {
-            public void interceptPacket(Packet packet, Session session, boolean incoming,
-                                        boolean processed)
-            {
-                // Only track processed packets so that we don't count them twice.
-                if (processed) {
-                    packetCount.incrementAndGet();
-                }
+        packetInterceptor = (packet, session, incoming, processed) -> {
+            // Only track processed packets so that we don't count them twice.
+            if (processed) {
+                packetCount.incrementAndGet();
             }
         };
         InterceptorManager.getInstance().addInterceptor(packetInterceptor);
@@ -129,10 +123,6 @@ public class StatisticsModule {
                 return false;
             }
 
-            @Override
-            public RepresentationSemantics getRepresentationSemantics() {
-                return RepresentationSemantics.SNAPSHOT;
-            }
         };
 
         // Add to StatisticsManager
@@ -154,10 +144,6 @@ public class StatisticsModule {
                 return false;
             }
 
-            @Override
-            public RepresentationSemantics getRepresentationSemantics() {
-                return RepresentationSemantics.SNAPSHOT;
-            }
         };
         statisticsManager.addStatistic(SESSIONS_KEY, activeSessionStatistic);
     }

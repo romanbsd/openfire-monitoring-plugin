@@ -13,8 +13,8 @@ import java.util.Date;
  */
 public class RetrieveRequest
 {
-    private JID with;
-    private Date start;
+    private final JID with;
+    private final Date start;
 
     private XmppResultSet resultSet;
 

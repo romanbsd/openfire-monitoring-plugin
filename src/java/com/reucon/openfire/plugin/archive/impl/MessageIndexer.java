@@ -22,15 +22,12 @@ import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.ConversationManager;
 import org.jivesoftware.openfire.archive.MonitoringConstants;
 import org.jivesoftware.openfire.index.LuceneIndexer;
-import org.jivesoftware.openfire.muc.MultiUserChatManager;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
 import org.jivesoftware.util.JiveGlobals;
 import org.xmpp.packet.JID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.print.Doc;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -65,7 +62,7 @@ public class MessageIndexer extends LuceneIndexer
 
     public static final String NEW_MESSAGES = ALL_MESSAGES + " AND sentDate > ?";
 
-    private ConversationManager conversationManager;
+    private final ConversationManager conversationManager;
 
     public MessageIndexer( final TaskEngine taskEngine, final ConversationManager conversationManager )
     {
@@ -74,8 +71,7 @@ public class MessageIndexer extends LuceneIndexer
     }
 
     @Override
-    protected Instant doUpdateIndex( final IndexWriter writer, final Instant lastModified ) throws IOException
-    {
+    protected Instant doUpdateIndex( final IndexWriter writer, final Instant lastModified ) {
         // Do nothing if message archiving is disabled.
         if ( !conversationManager.isMessageArchivingEnabled() ) {
             return lastModified;
@@ -93,8 +89,7 @@ public class MessageIndexer extends LuceneIndexer
     }
 
     @Override
-    public Instant doRebuildIndex( final IndexWriter writer ) throws IOException
-    {
+    public Instant doRebuildIndex( final IndexWriter writer ) {
         // Do nothing if message archiving is disabled.
         if (!conversationManager.isMessageArchivingEnabled()) {
             return Instant.EPOCH;
@@ -316,7 +311,7 @@ public class MessageIndexer extends LuceneIndexer
         document.add(new StoredField("messageID", messageID ) );
         document.add(new NumericDocValuesField("messageIDRange", messageID));
         document.add(new StringField("room", owner.toBareJID(), Field.Store.NO));
-        document.add(new StringField("isPrivateMessage", pmFromJID != null || pmToJID != null ? "true" : "false", Field.Store.NO));
+        document.add(new StringField("isPrivateMessage", Boolean.toString(pmFromJID != null || pmToJID != null), Field.Store.NO));
         if ( pmFromJID != null ) {
             document.add(new StringField("pmFromJID", pmFromJID.toBareJID(), Field.Store.NO));
         }

@@ -159,8 +159,8 @@ public interface StatsViewer {
         last_hour(3600, 15),
         last_day(43200, 15);
 
-        private long timePeriod;
-        private int dataPoints;
+        private final long timePeriod;
+        private final int dataPoints;
 
         TimePeriod(long timePeriod, int dataPoints) {
             this.timePeriod = timePeriod;
@@ -197,9 +197,9 @@ public interface StatsViewer {
      * A snapshot of a stat in time.
      */
     final class StatView {
-        private long startTime;
-        private long endTime;
-        private double[][] data;
+        private final long startTime;
+        private final long endTime;
+        private final double[][] data;
 
         public StatView(long startTime, long endTime, double[][] data) {
             this.startTime = startTime;

@@ -16,7 +16,6 @@ package com.reucon.openfire.plugin.archive.impl;
 
 import com.reucon.openfire.plugin.archive.model.ArchivedMessage;
 import com.reucon.openfire.plugin.archive.xep0313.IQQueryHandler;
-import org.dom4j.DocumentException;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.util.StringUtils;
@@ -99,7 +98,7 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
 
             if ( with != null ) {
                 if (with.getResource() == null) {
-                    pstmt.setString( ++pos, with.toString() + "%" );
+                    pstmt.setString( ++pos, with + "%" );
                 } else {
                     pstmt.setString( ++pos, with.toString() );
                 }
@@ -130,8 +129,6 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
             if (!IQQueryHandler.IGNORE_RETRIEVAL_EXCEPTIONS.getValue()) {
                 throw new DataRetrievalException(e);
             }
-        } catch (DocumentException e) {
-            Log.error("Unable to parse 'stanza' value as valid XMPP for MAM-MUC room {}", this.room, e);
         } finally {
             DbConnectionManager.closeConnection(rs, pstmt, connection);
         }
@@ -157,7 +154,7 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
 
             if ( with != null ) {
                 if (with.getResource() == null) {
-                    pstmt.setString( ++pos, with.toString() + "%" );
+                    pstmt.setString( ++pos, with + "%" );
                 } else {
                     pstmt.setString( ++pos, with.toString() );
                 }
@@ -260,21 +257,12 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
 
     private String buildQueryForMessages( final Long after, final Long before, final int maxResults, final boolean isPagingBackwards )
     {
-        switch (org.jivesoftware.database.DbConnectionManager.getDatabaseType())
-        {
-            case mysql:
-            case mariadb:
-                return getStatementForMySQL( after, before, maxResults, isPagingBackwards );
-
-            case firebird:
-                return getStatementForFirebird( after, before, maxResults, isPagingBackwards );
-
-            case sqlserver:
-                return getStatementForSQLServer( after, before, maxResults, isPagingBackwards );
-
-            default:
-                return getStatementForMySQL( after, before, maxResults, isPagingBackwards ); //Standardsyntax like mysql!?
-        }
+        return switch (DbConnectionManager.getDatabaseType()) {
+            case mysql, mariadb -> getStatementForMySQL(after, before, maxResults, isPagingBackwards);
+            case firebird -> getStatementForFirebird(after, before, maxResults, isPagingBackwards);
+            case sqlserver -> getStatementForSQLServer(after, before, maxResults, isPagingBackwards);
+            default -> getStatementForMySQL(after, before, maxResults, isPagingBackwards); //Standardsyntax like mysql!?
+        };
     }
 
     private String buildQueryForTotalCount()

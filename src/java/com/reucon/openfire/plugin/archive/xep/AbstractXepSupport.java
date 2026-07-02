@@ -30,7 +30,7 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
     protected final Map<QName, IQHandler> element2Handlers;
     protected final IQHandler iqDispatcher;
     protected final String namespace;
-    protected boolean muc;
+    protected final boolean muc;
     protected Collection<IQHandler> iqHandlers;
 
     public AbstractXepSupport(XMPPServer server, String namespace,String iqDispatcherNamespace, String iqDispatcherName, boolean muc) {
@@ -64,8 +64,7 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
                 iqHandler.initialize(server);
                 iqHandler.start();
             } catch (Exception e) {
-                Log.error("Unable to initialize and start "
-                        + iqHandler.getClass());
+                Log.error("Unable to initialize and start {}", iqHandler.getClass());
                 continue;
             }
 
@@ -104,7 +103,7 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
                 iqHandler.stop();
                 iqHandler.destroy();
             } catch (Exception e) {
-                Log.warn("Unable to stop and destroy " + iqHandler.getClass());
+                Log.warn("Unable to stop and destroy {}", iqHandler.getClass());
             }
 
             if (iqHandler instanceof ServerFeaturesProvider) {

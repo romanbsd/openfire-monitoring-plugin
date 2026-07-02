@@ -25,7 +25,7 @@ public class ArchivedMessage {
 
     public static final Logger Log = LoggerFactory.getLogger( ArchivedMessage.class );
 
-    private static SystemProperty<Boolean> OF1804_DISABLE = SystemProperty.Builder.ofType(Boolean.class)
+    private static final SystemProperty<Boolean> OF1804_DISABLE = SystemProperty.Builder.ofType(Boolean.class)
         .setKey("conversation.OF-1804.disable")
         .setDefaultValue(false)
         .setDynamic(true)
@@ -83,7 +83,7 @@ public class ArchivedMessage {
     // Issue #373: Lazily populates #stanza
     private String rawStanza;
 
-    public ArchivedMessage(@Nullable final Long id, @Nonnull final Date time, @Nonnull final Direction direction, @Nonnull final JID with, @Nullable final String body, @Nullable final String stanza) throws DocumentException {
+    public ArchivedMessage(@Nullable final Long id, @Nonnull final Date time, @Nonnull final Direction direction, @Nonnull final JID with, @Nullable final String body, @Nullable final String stanza) {
         this.id = id;
         this.time = time;
         this.direction = direction;
@@ -220,13 +220,10 @@ public class ArchivedMessage {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
 
-        sb.append("ArchivedMessage[id=").append(id).append(",");
-        sb.append("time=").append(time).append(",");
-        sb.append("direction=").append(direction).append("]");
-
-        return sb.toString();
+        return "ArchivedMessage[id=" + id + "," +
+            "time=" + time + "," +
+            "direction=" + direction + "]";
     }
 
     /**

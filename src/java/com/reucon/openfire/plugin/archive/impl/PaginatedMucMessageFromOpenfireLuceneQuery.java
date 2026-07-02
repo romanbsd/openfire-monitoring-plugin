@@ -48,12 +48,11 @@ public class PaginatedMucMessageFromOpenfireLuceneQuery extends AbstractPaginate
     protected IndexSearcher getSearcher() throws IOException
     {
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
-        if (!plugin.isPresent()) {
+        if (plugin.isEmpty()) {
             throw new IllegalStateException("Unable to obtain Lucene Index Searcher! The Monitoring plugin does not appear to be loaded on this machine.");
         }
         final MucIndexer mucIndexer = ((MonitoringPlugin)plugin.get()).getMucIndexer();
-        final IndexSearcher searcher = mucIndexer.getSearcher();
-        return searcher;
+        return mucIndexer.getSearcher();
     }
 
     @Override

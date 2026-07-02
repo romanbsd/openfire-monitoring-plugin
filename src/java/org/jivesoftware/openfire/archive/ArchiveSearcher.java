@@ -206,12 +206,8 @@ public class ArchiveSearcher {
 
             return new LuceneQueryResults(searcher, hits, startIndex, endIndex);
         }
-        catch (ParseException pe) {
+        catch (ParseException | IOException pe) {
             Log.error(pe.getMessage(), pe);
-            return Collections.emptySet();
-        }
-        catch (IOException ioe) {
-            Log.error(ioe.getMessage(), ioe);
             return Collections.emptySet();
         }
     }
@@ -372,7 +368,7 @@ public class ArchiveSearcher {
         // Set the database query string.
         cachedPstmt.setSQL(query.toString());
 
-        List<Long> conversationIDs = new ArrayList<Long>();
+        List<Long> conversationIDs = new ArrayList<>();
 
         // Get all matching conversations from the database.
         Connection con = null;
@@ -426,9 +422,9 @@ public class ArchiveSearcher {
      * Returns Hits from a database search against archived conversations as a Collection
      * of Conversation objects.
      */
-    private class DatabaseQueryResults extends AbstractCollection<Conversation> {
+    private static class DatabaseQueryResults extends AbstractCollection<Conversation> {
 
-        private List<Long> conversationIDs;
+        private final List<Long> conversationIDs;
 
         /**
          * Constructs a new query results object.
@@ -442,7 +438,7 @@ public class ArchiveSearcher {
         @Override
         public Iterator<Conversation> iterator() {
             final Iterator<Long> convIterator = conversationIDs.iterator();
-            return new Iterator<Conversation>() {
+            return new Iterator<>() {
 
                 private Conversation nextElement = null;
 
@@ -459,8 +455,7 @@ public class ArchiveSearcher {
                     if (nextElement != null) {
                         element = nextElement;
                         nextElement = null;
-                    }
-                    else {
+                    } else {
                         element = getNextElement();
                         if (element == null) {
                             throw new NoSuchElementException();
@@ -481,8 +476,7 @@ public class ArchiveSearcher {
                         try {
                             long conversationID = convIterator.next();
                             return ConversationDAO.loadConversation(conversationID);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             Log.error(e.getMessage(), e);
                         }
                     }
@@ -501,12 +495,12 @@ public class ArchiveSearcher {
      * Returns Hits from a Lucene search against archived conversations as a Collection
      * of Conversation objects.
      */
-    private class LuceneQueryResults extends AbstractCollection<Conversation> {
+    private static class LuceneQueryResults extends AbstractCollection<Conversation> {
 
-        private IndexSearcher searcher;
-        private TopDocs hits;
-        private int index;
-        private int endIndex;
+        private final IndexSearcher searcher;
+        private final TopDocs hits;
+        private final int index;
+        private final int endIndex;
 
         /**
          * Constructs a new query results object.
@@ -528,7 +522,7 @@ public class ArchiveSearcher {
             final ScoreDoc[] scoreDocs = Arrays.copyOfRange( hits.scoreDocs, index, Math.min( endIndex + 1, hits.scoreDocs.length) );
             final Iterator<ScoreDoc> hitsIterator = Arrays.asList(scoreDocs).iterator();
 
-            return new Iterator<Conversation>() {
+            return new Iterator<>() {
 
                 private Conversation nextElement = null;
 
@@ -545,8 +539,7 @@ public class ArchiveSearcher {
                     if (nextElement != null) {
                         element = nextElement;
                         nextElement = null;
-                    }
-                    else {
+                    } else {
                         element = getNextElement();
                         if (element == null) {
                             throw new NoSuchElementException();
@@ -568,8 +561,7 @@ public class ArchiveSearcher {
                             ScoreDoc hit = hitsIterator.next();
                             long conversationID = Long.parseLong(searcher.doc(hit.doc).get("conversationID"));
                             return ConversationDAO.loadConversation(conversationID);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             Log.error(e.getMessage(), e);
                         }
                     }

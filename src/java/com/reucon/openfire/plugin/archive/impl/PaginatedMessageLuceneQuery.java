@@ -52,8 +52,7 @@ public class PaginatedMessageLuceneQuery extends AbstractPaginatedMamQuery
     {
         final MonitoringPlugin plugin = (MonitoringPlugin) XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME).get();
         final MessageIndexer archiveIndexer = plugin.getMessageIndexer();
-        final IndexSearcher searcher = archiveIndexer.getSearcher();
-        return searcher;
+        return archiveIndexer.getSearcher();
     }
 
     @Override
