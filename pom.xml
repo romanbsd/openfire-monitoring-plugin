@@ -2,8 +2,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>plugins</artifactId>
         <groupId>org.igniterealtime.openfire</groupId>
+        <artifactId>plugins</artifactId>
         <version>5.1.0</version>
     </parent>
     <groupId>org.igniterealtime.openfire.plugins</groupId>
@@ -13,7 +13,18 @@
     <description>Monitors conversations and statistics of the server.</description>
 
     <properties>
-        <jersey.version>2.45</jersey.version>
+        <jersey.version>2.48</jersey.version>
+        <jrobin.version>1.7.1</jrobin.version>
+        <jfreechart.version>1.0.13</jfreechart.version>
+        <lucene.version>9.12.3</lucene.version>
+        <itext.version>7.2.6</itext.version>
+        <orsonpdf.version>1.9.1</orsonpdf.version>
+        <commons-io.version>2.22.0</commons-io.version>
+        <jaxb-api.version>2.3.1</jaxb-api.version>
+        <activation.version>1.1.1</activation.version>
+        <jaxb-runtime.version>2.3.9</jaxb-runtime.version>
+        <junit.version>4.13.2</junit.version>
+        <smack-integration-test.version>4.5.0-rc1</smack-integration-test.version>
     </properties>
 
     <build>
@@ -69,69 +80,71 @@
         <dependency>
             <groupId>com.purej</groupId>
             <artifactId>jrobin</artifactId>
-            <version>1.7.1</version>
+            <version>${jrobin.version}</version>
         </dependency>
         <dependency>
             <groupId>jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.0.13</version>
+            <version>${jfreechart.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>8.4.0</version>
+            <version>${lucene.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>8.4.0</version>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>${lucene.version}</version>
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itext7-core</artifactId>
-            <version>7.2.2</version>
+            <version>${itext.version}</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>com.orsonpdf</groupId>
             <artifactId>orsonpdf</artifactId>
-            <version>1.9.1</version>
+            <version>${orsonpdf.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.16.1</version>
+            <version>${commons-io.version}</version>
         </dependency>
 
-        <!-- For java 9+, see: https://stackoverflow.com/questions/51916221 -->
-        <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+        <!-- For Java 9+, see: https://stackoverflow.com/questions/51916221 -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
+            <version>${jaxb-api.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/javax.activation/activation -->
         <dependency>
             <groupId>javax.activation</groupId>
             <artifactId>activation</artifactId>
-            <version>1.1.1</version>
+            <version>${activation.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-            <version>2.3.3</version>
+            <version>${jaxb-runtime.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-integration-test</artifactId>
-            <version>4.5.0-beta9</version>
+            <version>${smack-integration-test.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -147,9 +160,9 @@
 
     <pluginRepositories>
         <!-- Typically used to retrieve Maven plugins that are used by this project.
-             This apparently is also used to botain the dependencies _used by_ these
+             This is also used to obtain the dependencies _used by_ these
              plugins (such as the openfire-plugin-assembly-descriptor, needed to
-             package the project as an Openfire plugin!) -->
+             package the project as an Openfire plugin!). -->
         <pluginRepository>
             <id>igniterealtime</id>
             <name>Ignite Realtime Repository</name>
