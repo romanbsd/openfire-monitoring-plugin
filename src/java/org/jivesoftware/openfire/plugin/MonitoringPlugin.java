@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.reucon.openfire.plugin.archive.impl.*;
+import com.reucon.openfire.plugin.archive.search.ImSearchSupport;
 import com.reucon.openfire.plugin.archive.xep0313.Xep0313Support1;
 import com.reucon.openfire.plugin.archive.xep0313.Xep0313Support2;
 import org.eclipse.jetty.ee8.webapp.WebAppContext;
@@ -81,6 +82,7 @@ public class MonitoringPlugin implements Plugin, PluginListener
     private Xep0313Support xep0313Support;
     private Xep0313Support1 xep0313Support1;
     private Xep0313Support2 xep0313Support2;
+    private ImSearchSupport imSearchSupport;
     private Logger Log;
 
     // Stats and Graphing classes
@@ -162,6 +164,9 @@ public class MonitoringPlugin implements Plugin, PluginListener
 
         xep0313Support2 = new Xep0313Support2(XMPPServer.getInstance());
         xep0313Support2.start();
+
+        imSearchSupport = new ImSearchSupport(XMPPServer.getInstance());
+        imSearchSupport.start();
 
         // Make sure that the monitoring folder exists under the home directory
         final Path monitoringFolder = JiveGlobals.getHomePath().resolve(MonitoringConstants.NAME);
@@ -259,6 +264,10 @@ public class MonitoringPlugin implements Plugin, PluginListener
         xep0313Support.stop();
         xep0313Support1.stop();
         xep0313Support2.stop();
+        if (imSearchSupport != null) {
+            imSearchSupport.stop();
+            imSearchSupport = null;
+        }
 
         OpenSearchClientHolder.closeClient();
         

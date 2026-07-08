@@ -89,6 +89,7 @@ public class MucIndexer extends OpenSearchIndexer
             return Instant.EPOCH;
         }
         Log.debug("... started to index MUC messages to rebuild the OpenSearch index.");
+        OpenSearchClientHolder.deleteByQuery(getClient(), getIndexName(), Query.of(q -> q.matchAll(m -> m)));
         final Instant newestDate = indexMUCMessages(Instant.EPOCH);
         Log.debug("... finished indexing MUC messages to rebuild the OpenSearch index. Last indexed message date {}", newestDate);
         return newestDate;

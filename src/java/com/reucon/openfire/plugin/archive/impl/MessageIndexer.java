@@ -18,10 +18,12 @@ package com.reucon.openfire.plugin.archive.impl;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.ConversationManager;
+import org.jivesoftware.openfire.muc.MultiUserChatService;
 import org.jivesoftware.openfire.index.OpenSearchClientHolder;
 import org.jivesoftware.openfire.index.OpenSearchIndexer;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.xmpp.packet.JID;
 
@@ -84,6 +86,7 @@ public class MessageIndexer extends OpenSearchIndexer
             return Instant.EPOCH;
         }
         Log.debug("... started to index messages to rebuild the OpenSearch index.");
+        OpenSearchClientHolder.deleteByQuery(getClient(), getIndexName(), Query.of(q -> q.matchAll(m -> m)));
         final Instant newestDate = indexMessages(Instant.EPOCH);
         Log.debug("... finished indexing messages to rebuild the OpenSearch index. Last indexed message date {}", newestDate);
         return newestDate;
@@ -148,13 +151,15 @@ public class MessageIndexer extends OpenSearchIndexer
                     continue;
                 }
 
-                if (XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(toJID) != null) {
-                    final JID room = toJID.asBareJID();
+                final JID toBare = toJID.asBareJID();
+                if (isMucRoomAddress(toBare)) {
+                    final JID room = toBare;
                     final JID pmFromJID = isPMforJID != null ? fromJID.asBareJID() : null;
-                    batch.add(buildBulkOperation(createMUCDocument(room, messageID, pmFromJID, isPMforJID, sentDate, body), room.toBareJID() + "-" + messageID + "-room"));
+                    batch.add(buildBulkOperation(createMUCDocument(room, messageID, fromJID, pmFromJID, isPMforJID, sentDate, body), room.toBareJID() + "-" + messageID + "-room"));
                     flushBatchIfNeeded(client, batch);
 
-                    if (XMPPServer.getInstance().isLocal(fromJID)) {
+                    // Only private MUC messages belong in a user's personal archive index.
+                    if (MessageIndexingRules.shouldIndexPersonalMirror(isPMforJID) && XMPPServer.getInstance().isLocal(fromJID)) {
                         batch.add(buildBulkOperation(createPersonalDocument(fromJID.asBareJID(), messageID, fromJID, toJID, sentDate, body), fromJID.toBareJID() + "-" + messageID));
                         flushBatchIfNeeded(client, batch);
                     }
@@ -190,6 +195,20 @@ public class MessageIndexer extends OpenSearchIndexer
         return latest;
     }
 
+    private static boolean isMucRoomAddress(@Nonnull final JID jid) {
+        final JID bare = jid.asBareJID();
+        if (XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(bare) != null) {
+            return true;
+        }
+        final String domain = XMPPServer.getInstance().getServerInfo().getXMPPDomain();
+        for (final MultiUserChatService service : XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatServices()) {
+            if (MessageIndexingRules.matchesMucServiceSuffix(bare.toString(), service.getServiceName(), domain)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void flushBatchIfNeeded(final OpenSearchClient client, final List<BulkOperation> batch) throws IOException {
         if (batch.size() >= 250) {
             OpenSearchClientHolder.bulkIndex(client, getIndexName(), batch);
@@ -218,6 +237,7 @@ public class MessageIndexer extends OpenSearchIndexer
         if (with.getResource() != null) {
             document.put("withResource", with.getResource());
         }
+        putSenderFields(document, fromJID);
         document.put("sentDate", sentDate.toEpochMilli());
         document.put("body", body);
         return document;
@@ -226,6 +246,7 @@ public class MessageIndexer extends OpenSearchIndexer
     private static Map<String, Object> createMUCDocument(
         @Nonnull final JID owner,
         final long messageID,
+        @Nonnull final JID fromJID,
         @Nullable final JID pmFromJID,
         @Nullable final JID pmToJID,
         @Nonnull final Instant sentDate,
@@ -242,9 +263,17 @@ public class MessageIndexer extends OpenSearchIndexer
         if (pmToJID != null) {
             document.put("pmToJID", pmToJID.toBareJID());
         }
+        putSenderFields(document, fromJID);
         document.put("sentDate", sentDate.toEpochMilli());
         document.put("body", body);
         return document;
+    }
+
+    private static void putSenderFields(final Map<String, Object> document, @Nonnull final JID fromJID) {
+        document.put("senderBare", fromJID.toBareJID());
+        if (fromJID.getResource() != null) {
+            document.put("senderResource", fromJID.getResource());
+        }
     }
 
     private static Map<String, Object> messageMappings() {
@@ -258,6 +287,8 @@ public class MessageIndexer extends OpenSearchIndexer
         mappings.put("isPrivateMessage", "{\"type\":\"keyword\"}");
         mappings.put("pmFromJID", "{\"type\":\"keyword\"}");
         mappings.put("pmToJID", "{\"type\":\"keyword\"}");
+        mappings.put("senderBare", "{\"type\":\"keyword\"}");
+        mappings.put("senderResource", "{\"type\":\"keyword\"}");
         mappings.put("sentDate", "{\"type\":\"long\"}");
         mappings.put("body", "{\"type\":\"text\"}");
         return mappings;

@@ -136,5 +136,20 @@ When OpenSearch is first configured, use <em>Server &gt; Archiving &gt; Archivin
 Legacy on-disk Lucene indexes under <tt>monitoring/search</tt>, <tt>monitoring/msgsearch</tt>, and <tt>monitoring/mucsearch</tt> are no longer used.
 </p>
 
+<h2>IM search (custom namespace)</h2>
+
+<p>
+When OpenSearch indexing is enabled, the plugin advertises <tt>urn:xmpp:im:search:0</tt> for app clients that need
+cross-archive search with modifier syntax. Generic XMPP clients should continue to use MAM (XEP-0313) and optional full-text
+via XEP-0431 (<tt>{urn:xmpp:fulltext:0}fulltext</tt>).
+</p>
+
+<p>
+Send an IQ <tt>set</tt> with a <tt>&lt;search/&gt;</tt> child. Place the query in <tt>&lt;q/&gt;</tt>.
+Supported modifiers: <tt>from:</tt>, <tt>in:</tt>, <tt>before:</tt>, <tt>after:</tt>, free text, and <tt>"quoted phrases"</tt>.
+Pagination uses RSM (<tt>https://xmpp.org/extensions/xep-0059.html</tt>). An IQ <tt>get</tt> returns capability metadata
+(enabled flag, types, modifiers). Results are compact <tt>&lt;item/&gt;</tt> elements (not MAM message fan-out).
+</p>
+
 </body>
 </html>
