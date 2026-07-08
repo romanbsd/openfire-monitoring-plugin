@@ -42,11 +42,13 @@ public class GetConversationCountTask implements ClusterTask<Integer>
 
     private int conversationCount;
 
+    @Override
     @Nonnull
     public Integer getResult() {
         return conversationCount;
     }
 
+    @Override
     public void run() {
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
         if (plugin.isEmpty()) {
@@ -57,10 +59,12 @@ public class GetConversationCountTask implements ClusterTask<Integer>
         conversationCount = conversationManager.getConversationCount();
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) {
         // Do nothing
     }
 
+    @Override
     public void readExternal(ObjectInput in) {
         // Do nothing
     }

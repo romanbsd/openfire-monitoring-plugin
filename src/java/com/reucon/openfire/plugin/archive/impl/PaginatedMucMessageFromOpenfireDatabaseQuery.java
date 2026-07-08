@@ -29,8 +29,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -76,7 +76,7 @@ public class PaginatedMucMessageFromOpenfireDatabaseQuery extends AbstractPagina
     @Override
     protected List<ArchivedMessage> getPage(final Long after, final Long before, final int maxResults, final boolean isPagingBackwards) throws DataRetrievalException {
         Log.trace( "Getting page of archived messages. After: {}, Before: {}, Max results: {}, Paging backwards: {}", after, before, maxResults, isPagingBackwards );
-        final List<ArchivedMessage> msgs = new LinkedList<>();
+        final List<ArchivedMessage> msgs = new ArrayList<>();
 
         // The HSQL driver that is used in Openfire 4.5.0 will disregard a 'limit 0' (instead, returning all rows. A
         // limit on positive numbers does work). We should prevent this from occurring, if only because querying a database

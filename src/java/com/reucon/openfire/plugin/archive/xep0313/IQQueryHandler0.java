@@ -2,9 +2,6 @@ package com.reucon.openfire.plugin.archive.xep0313;
 
 import org.dom4j.*;
 import org.jivesoftware.openfire.XMPPServer;
-import org.jivesoftware.openfire.handler.IQHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Message;
 import org.xmpp.packet.JID;
@@ -14,7 +11,6 @@ import org.xmpp.packet.JID;
  */
 class IQQueryHandler0 extends IQQueryHandler {
 
-    private static final Logger Log = LoggerFactory.getLogger(IQHandler.class);
     private static final String MODULE_NAME = "Message Archive Management Query Handler v0";
 
     IQQueryHandler0() {
@@ -59,7 +55,7 @@ class IQQueryHandler0 extends IQQueryHandler {
         {
             finalMessage.setFrom( queryRequest.getArchive().asBareJID() );
         }
-        Element fin = finalMessage.addChildElement("fin", NAMESPACE);
+        Element fin = finalMessage.addChildElement("fin", namespace);
         completeFinElement(queryRequest, fin);
 
         router.route(finalMessage);

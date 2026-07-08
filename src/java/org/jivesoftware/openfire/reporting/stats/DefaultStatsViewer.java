@@ -37,11 +37,13 @@ public class DefaultStatsViewer implements StatsViewer {
         this.engine = engine;
     }
 
+    @Override
     public String [] getAllHighLevelStatKeys() {
         return engine.getAllHighLevelNames();
     }
 
 
+    @Override
     public Statistic[] getStatistic(String statKey) {
         StatDefinition[] definitions = engine.getDefinition(statKey);
         if(definitions == null) {
@@ -56,11 +58,13 @@ public class DefaultStatsViewer implements StatsViewer {
     }
 
 
+    @Override
     public long getLastSampleTime(String key) {
         return engine.getDefinition(key)[0].getLastSampleTime() * 1000;
     }
 
 
+    @Override
     public double[][] getData(String key, long startTime, long endTime) {
         return engine.getDefinition(key)[0].getData(parseTime(startTime), parseTime(endTime));
     }
@@ -75,11 +79,13 @@ public class DefaultStatsViewer implements StatsViewer {
         return time / 1000;
     }
 
+    @Override
     public double[][] getData(String key, long startTime, long endTime, int dataPoints) {
         return engine.getDefinition(key)[0].getData(parseTime(startTime), parseTime(endTime), dataPoints);
     }
 
 
+    @Override
     public StatView getData(String key, TimePeriod timePeriod) {
         StatDefinition def = engine.getDefinition(key)[0];
         long endTime = def.getLastSampleTime();
@@ -89,14 +95,17 @@ public class DefaultStatsViewer implements StatsViewer {
     }
 
 
+    @Override
     public double[] getMax(String key, long startTime, long endTime) {
         return engine.getDefinition(key)[0].getMax(parseTime(startTime), parseTime(endTime));
     }
 
+    @Override
     public double[] getMax(String key, long startTime, long endTime, int dataPoints) {
         return engine.getDefinition(key)[0].getMax(parseTime(startTime), parseTime(endTime), dataPoints);
     }
 
+    @Override
     public double[] getMax(String key, TimePeriod timePeriod) {
         StatDefinition def = engine.getDefinition(key)[0];
         long lastTime = def.getLastSampleTime();
@@ -104,14 +113,17 @@ public class DefaultStatsViewer implements StatsViewer {
     }
 
 
+    @Override
     public double[] getMin(String key, long startTime, long endTime) {
         return engine.getDefinition(key)[0].getMin(parseTime(startTime), parseTime(endTime));
     }
 
+    @Override
     public double[] getMin(String key, long startTime, long endTime, int dataPoints) {
         return engine.getDefinition(key)[0].getMin(parseTime(startTime), parseTime(endTime), dataPoints);
     }
 
+    @Override
     public double[] getMin(String key, TimePeriod timePeriod) {
         StatDefinition def = engine.getDefinition(key)[0];
         long lastTime = def.getLastSampleTime();
@@ -119,6 +131,7 @@ public class DefaultStatsViewer implements StatsViewer {
     }
 
 
+    @Override
     public double[] getCurrentValue(String key) {
         if (ClusterManager.isSeniorClusterMember()) {
             return new double[] { engine.getDefinition(key)[0].getLastSample() };

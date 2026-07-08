@@ -15,6 +15,8 @@
  */
 package org.jivesoftware.openfire.reporting.graph;
 
+import com.google.common.base.Splitter;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
@@ -24,6 +26,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -91,14 +94,7 @@ public class GraphEngine {
      * Creates a graph in PNG format.  The PNG graph is encoded by the KeypointPNGEncoderAdapter
      * so that the resulting PNG is encoded with alpha transparency.
      *
-     * @param key
-     * @param width
-     * @param height
-     * @param startTime
-     * @param endTime
-     * @param dataPoints
-     * @return
-     * @throws IOException
+     * @throws IOException if graph encoding fails.
      */
     public byte[] generateGraph(String key, int width, int height, String color, long startTime, long endTime,
                                 int dataPoints) throws IOException
@@ -112,14 +108,6 @@ public class GraphEngine {
 
     /**
      * Creates a chart.
-     *
-     * @param key
-     * @param width
-     * @param height
-     * @param startTime
-     * @param endTime
-     * @param dataPoints
-     * @return
      */
     public JFreeChart generateChart(String key, int width, int height, String color, long startTime, long endTime,
                                     int dataPoints) {
@@ -144,14 +132,7 @@ public class GraphEngine {
      * difference between the graph produced by this method compared to the
      * graph produced by the <code>generateGraph</code> method is that this one
      * produces graphs with no x-axis and no y-axis and is usually smaller in size.
-     * @param key
-     * @param width
-     * @param height
-     * @param startTime
-     * @param endTime
-     * @param dataPoints
-     * @return
-     * @throws IOException
+     * @throws IOException if graph encoding fails.
      */
     public byte[] generateSparklinesGraph(String key, int width, int height, String color, long startTime,
                                           long endTime, int dataPoints) throws IOException
@@ -335,7 +316,7 @@ public class GraphEngine {
         Locale locale = JiveGlobals.getLocale();
         // If the tick units have not yet been setup or the locale has changed
         if(tickUnits == null || !locale.equals(oldLocale)) {
-            tickUnits = createTickUnits(locale, JiveGlobals.getTimeZone());
+            tickUnits = createTickUnits(locale);
             oldLocale = locale;
         }
         xAxis.setStandardTickUnits(tickUnits);
@@ -343,7 +324,7 @@ public class GraphEngine {
         return xAxis;
     }
 
-    private TickUnits createTickUnits(Locale locale, TimeZone zone) {
+    private TickUnits createTickUnits(Locale locale) {
         TickUnits units = new TickUnits();
 
         // date formatters
@@ -432,10 +413,6 @@ public class GraphEngine {
 
     /**
      * Generates a SparkLine Time Area Chart.
-     * @param key
-     * @param stats
-     * @param startTime
-     * @param endTime
      * @return chart
      */
     private JFreeChart generateSparklineAreaChart(String key, String color, Statistic [] stats, long startTime, long endTime, int dataPoints) {
@@ -737,11 +714,11 @@ public class GraphEngine {
                 dataPoints = 48;
             }
             default -> {
-                String[] dates = timeperiod.split("to");
-                if (dates.length > 0) {
+                List<String> dates = Splitter.on("to").splitToList(timeperiod);
+                if (dates.size() > 1) {
 
-                    String fromDateParam = dates[0];
-                    String toDateParam = dates[1];
+                    String fromDateParam = dates.get(0);
+                    String toDateParam = dates.get(1);
                     if (fromDateParam != null) {
                         DateFormat formDateFormatter;
                         if (fromDateParam.contains("/")) {

@@ -308,26 +308,32 @@ public class ConversationManager implements ComponentEventListener{
         // Register a statistic.
         Statistic conversationStat = new Statistic() {
 
+            @Override
             public String getName() {
                 return LocaleUtils.getLocalizedString("stat.conversation.name", MonitoringConstants.NAME);
             }
 
+            @Override
             public Type getStatType() {
                 return Type.amount;
             }
 
+            @Override
             public String getDescription() {
                 return LocaleUtils.getLocalizedString("stat.conversation.desc", MonitoringConstants.NAME);
             }
 
+            @Override
             public String getUnits() {
                 return LocaleUtils.getLocalizedString("stat.conversation.units", MonitoringConstants.NAME);
             }
 
+            @Override
             public double sample() {
                 return getConversationCount();
             }
 
+            @Override
             public boolean isPartialSample() {
                 return false;
             }
@@ -1031,6 +1037,7 @@ public class ConversationManager implements ComponentEventListener{
         return roomJID.toString();
     }
 
+    @Override
     public void componentInfoReceived(IQ iq) {
         // Check if the component is a gateway
         boolean gatewayFound = false;
@@ -1047,10 +1054,12 @@ public class ConversationManager implements ComponentEventListener{
         }
     }
 
+    @Override
     public void componentRegistered(JID componentJID) {
         // Do nothing
     }
 
+    @Override
     public void componentUnregistered(JID componentJID) {
         // Remove stored information about this component
         gateways.remove(componentJID.getDomain());
@@ -1196,22 +1205,22 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class ConversationArchivingRunnable extends Archiver<Conversation>
     {
-        public static final SystemProperty<Integer> CONVERSATION_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        private static final SystemProperty<Integer> CONVERSATION_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.conversation.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> CONVERSATION_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> CONVERSATION_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.conversation.max-purge-interval")
-            .setDefaultValue(Duration.ofMillis(1000))
+            .setDefaultValue(Duration.ofSeconds(1))
             .setChronoUnit(ChronoUnit.MILLIS)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> CONVERSATION_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> CONVERSATION_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.conversation.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1228,6 +1237,7 @@ public class ConversationManager implements ComponentEventListener{
             );
         }
 
+        @Override
         protected void store( List<Conversation> workQueue )
         {
             if ( workQueue.isEmpty() )
@@ -1279,22 +1289,22 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class MessageArchivingRunnable extends Archiver<ArchivedMessage>
     {
-        public static final SystemProperty<Integer> MESSAGE_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        private static final SystemProperty<Integer> MESSAGE_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.message.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> MESSAGE_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> MESSAGE_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.message.max-purge-interval")
-            .setDefaultValue(Duration.ofMillis(1000))
+            .setDefaultValue(Duration.ofSeconds(1))
             .setChronoUnit(ChronoUnit.MILLIS)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> MESSAGE_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> MESSAGE_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.message.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1371,22 +1381,22 @@ public class ConversationManager implements ComponentEventListener{
      */
     private static class ParticipantArchivingRunnable extends Archiver<RoomParticipant>
     {
-        public static final SystemProperty<Integer> PARTICIPANT_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
+        private static final SystemProperty<Integer> PARTICIPANT_MAX_WORK_QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
             .setKey("conversation.archiver.participant.max-work-queue-size")
             .setDefaultValue(500)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> PARTICIPANT_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> PARTICIPANT_MAX_PURGE_INTERVAL = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.participant.max-purge-interval")
-            .setDefaultValue(Duration.ofMillis(1000))
+            .setDefaultValue(Duration.ofSeconds(1))
             .setChronoUnit(ChronoUnit.MILLIS)
             .setDynamic(true)
             .setPlugin(MonitoringConstants.PLUGIN_NAME)
             .build();
 
-        public static final SystemProperty<Duration> PARTICIPANT_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
+        private static final SystemProperty<Duration> PARTICIPANT_GRACE_PERIOD = SystemProperty.Builder.ofType(Duration.class)
             .setKey("conversation.archiver.participant.grace-period")
             .setDefaultValue(Duration.ofMillis(50))
             .setChronoUnit(ChronoUnit.MILLIS)
@@ -1403,6 +1413,7 @@ public class ConversationManager implements ComponentEventListener{
             );
         }
 
+        @Override
         protected void store( List<RoomParticipant> workQueue )
         {
             if ( workQueue.isEmpty() )
@@ -1456,6 +1467,7 @@ public class ConversationManager implements ComponentEventListener{
      */
     private class ConversationPropertyListener implements PropertyEventListener {
 
+        @Override
         public void propertySet(String property, Map<String, Object> params) {
             switch (property) {
                 case "conversation.metadataArchiving" -> {
@@ -1536,6 +1548,7 @@ public class ConversationManager implements ComponentEventListener{
             }
         }
 
+        @Override
         public void propertyDeleted(String property, Map<String, Object> params) {
             switch (property) {
                 case "conversation.metadataArchiving" ->
@@ -1558,10 +1571,12 @@ public class ConversationManager implements ComponentEventListener{
             }
         }
 
+        @Override
         public void xmlPropertySet(String property, Map<String, Object> params) {
             // Ignore.
         }
 
+        @Override
         public void xmlPropertyDeleted(String property, Map<String, Object> params) {
             // Ignore.
         }

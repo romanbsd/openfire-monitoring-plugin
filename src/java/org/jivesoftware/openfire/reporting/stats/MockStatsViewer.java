@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 /**
+ * Stats viewer implementation with generated sample data.
  */
 public class MockStatsViewer implements StatsViewer {
     private final StatsEngine engine;
@@ -34,10 +35,12 @@ public class MockStatsViewer implements StatsViewer {
         this.engine = engine;
     }
 
+    @Override
     public String [] getAllHighLevelStatKeys() {
         return engine.getAllHighLevelNames();
     }
 
+    @Override
     public Statistic[] getStatistic(String statKey) {
         StatDefinition[] definitions = engine.getDefinition(statKey);
         Statistic[] statistics = new Statistic[definitions.length];
@@ -48,14 +51,17 @@ public class MockStatsViewer implements StatsViewer {
         return statistics;
     }
 
+    @Override
     public long getLastSampleTime(String key) {
         return System.currentTimeMillis() / 1000;
     }
 
+    @Override
     public double[][] getData(String key, long startTime, long endTime) {
         return getData(key, true);
     }
 
+    @Override
     public double[][] getData(String key, long startTime, long endTime, int dataPoints) {
         return getData(key, true);
     }
@@ -86,12 +92,14 @@ public class MockStatsViewer implements StatsViewer {
         }
     }
 
+    @Override
     public StatView getData(String key, TimePeriod timePeriod) {
         long time = getLastSampleTime(key);
         double[][] data = getData(key, timePeriod.getStartTime(time), time);
         return new StatView(timePeriod.getStartTime(time), time, data);
     }
 
+    @Override
     public double[] getMax(String key, long startTime, long endTime) {
         double [][] data = getData(key, false);
         double[] toReturn = new double[data.length];
@@ -101,10 +109,12 @@ public class MockStatsViewer implements StatsViewer {
         return toReturn;
     }
 
+    @Override
     public double[] getMax(String key, long startTime, long endTime, int dataPoints) {
         return getMax(key, startTime, endTime);
     }
 
+    @Override
     public double[] getMax(String key, TimePeriod timePeriod) {
         long time = getLastSampleTime(key);
         return getMax(key, timePeriod.getStartTime(time), time);
@@ -120,6 +130,7 @@ public class MockStatsViewer implements StatsViewer {
             return max;
         }
 
+    @Override
     public double[] getMin(String key, long startTime, long endTime) {
         double [][] data = getData(key, false);
         double[] toReturn = new double[data.length];
@@ -129,10 +140,12 @@ public class MockStatsViewer implements StatsViewer {
         return toReturn;
     }
 
+    @Override
     public double[] getMin(String key, long startTime, long endTime, int dataPoints) {
         return getMin(key, startTime, endTime);
     }
 
+    @Override
     public double[] getMin(String key, TimePeriod timePeriod) {
         long time = getLastSampleTime(key);
         return getMin(key, timePeriod.getStartTime(time), time);
@@ -148,6 +161,7 @@ public class MockStatsViewer implements StatsViewer {
             return min;
         }
 
+    @Override
     public double[] getCurrentValue(String key) {
         double [][] data = getData(key, false);
         double[] toReturn = new double[data.length];

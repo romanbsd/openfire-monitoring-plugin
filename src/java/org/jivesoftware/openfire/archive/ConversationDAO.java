@@ -162,9 +162,9 @@ public class ConversationDAO {
      */
     public static List<ArchivedMessage> getMessages(@Nonnull final Conversation conversation, @Nonnull ConversationManager conversationManager) {
         if (conversation.getRoomID() == null && !conversationManager.isMessageArchivingEnabled()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         } else if (conversation.getRoomID() != null && !conversationManager.isRoomArchivingEnabled()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         List<ArchivedMessage> messages = new ArrayList<>();

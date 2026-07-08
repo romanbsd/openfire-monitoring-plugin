@@ -73,7 +73,7 @@ public class MessageIndexer extends OpenSearchIndexer
             return lastModified;
         }
         Log.debug("... started to index messages since {} to update the OpenSearch index.", lastModified);
-        final Instant newestDate = indexMessages(lastModified, false);
+        final Instant newestDate = indexMessages(lastModified);
         Log.debug("... finished indexing messages to update the OpenSearch index. Last indexed message date: {}", newestDate);
         return newestDate;
     }
@@ -84,12 +84,12 @@ public class MessageIndexer extends OpenSearchIndexer
             return Instant.EPOCH;
         }
         Log.debug("... started to index messages to rebuild the OpenSearch index.");
-        final Instant newestDate = indexMessages(Instant.EPOCH, true);
+        final Instant newestDate = indexMessages(Instant.EPOCH);
         Log.debug("... finished indexing messages to rebuild the OpenSearch index. Last indexed message date {}", newestDate);
         return newestDate;
     }
 
-    private Instant indexMessages(final Instant since, final boolean rebuild) throws IOException {
+    private Instant indexMessages(final Instant since) throws IOException {
         Instant latest = since;
         final OpenSearchClient client = getClient();
         final List<BulkOperation> batch = new ArrayList<>();

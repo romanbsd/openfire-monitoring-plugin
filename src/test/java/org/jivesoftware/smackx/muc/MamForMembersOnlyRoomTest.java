@@ -347,7 +347,7 @@ public class MamForMembersOnlyRoomTest extends AbstractMamTest
      * user.
      */
     @Override // Sadly, the SINT test framework requires a method in the child class. Working around code duplication using this override that delegates to the parent class.
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testPersonalMamIncludesDirectMessagesWithRealFullJidFilter() throws Exception
     {
         super.testPersonalMamIncludesDirectMessagesWithRealFullJidFilter();
@@ -397,7 +397,7 @@ public class MamForMembersOnlyRoomTest extends AbstractMamTest
      * Verifies that archived room messages shared in a members-only room cannot be retrieved by a user
      * that is not a member.
      */
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testNonMemberCantQueryJid() throws Exception
     {
         // Setup test fixture.
@@ -405,7 +405,7 @@ public class MamForMembersOnlyRoomTest extends AbstractMamTest
             .build();
 
         // Execute system under test.
-        final XMPPException.XMPPErrorException e = assertThrows(XMPPException.XMPPErrorException.class, () -> {
+        assertThrows(XMPPException.XMPPErrorException.class, () -> {
             mucMamManagerUserThree.queryArchive(mamQueryArgs);
         }, "Expected an error to be returned when a non-member tried to query the room archive of message-only room (but no error was returned).");
         // TODO possibly assert error type?

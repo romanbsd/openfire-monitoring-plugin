@@ -349,7 +349,7 @@ public class MamForNonAnonymousRoomTest extends AbstractMamTest
      * user.
      */
     @Override // Sadly, the SINT test framework requires a method in the child class. Working around code duplication using this override that delegates to the parent class.
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testPersonalMamIncludesDirectMessagesWithRealFullJidFilter() throws Exception
     {
         super.testPersonalMamIncludesDirectMessagesWithRealFullJidFilter();
@@ -399,7 +399,7 @@ public class MamForNonAnonymousRoomTest extends AbstractMamTest
      * Verifies that archived private messages that were shared in a non-anonymous room contain the real JID of the
      * sender.
      */
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testPrivateMessagesContainRealJid() throws Exception
     {
         // Setup test fixture.
@@ -425,7 +425,7 @@ public class MamForNonAnonymousRoomTest extends AbstractMamTest
      * Verifies that archived public messages that were shared in a non-anonymous room contain the real JID of the
      * sender.
      */
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testMucMessagesContainRealJid() throws Exception
     {
         // Setup test fixture.

@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Tracks a user's participation intervals in conversations.
+ *
  * @author Gastion Dombiak
  */
 @XmlRootElement
@@ -72,8 +74,7 @@ public class UserParticipations {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UserParticipations that = (UserParticipations) o;
+        if (!(o instanceof UserParticipations that)) return false;
         return roomParticipation == that.roomParticipation && Objects.equals(participations, that.participations);
     }
 

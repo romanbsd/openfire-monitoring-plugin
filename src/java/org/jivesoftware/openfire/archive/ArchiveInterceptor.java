@@ -51,17 +51,17 @@ public class ArchiveInterceptor implements PacketInterceptor {
         this.conversationManager = conversationManager;
     }
 
+    @Override
     public void interceptPacket(Packet packet, Session session, boolean incoming, boolean processed) {
         // Ignore any packets that haven't already been processed by interceptors.
         if (!processed) {
             return;
         }
-        if (packet instanceof Message) {
+        if (packet instanceof Message message) {
             // Ignore any outgoing messages (we'll catch them when they're incoming).
             if (!incoming) {
                 return;
             }
-            Message message = (Message) packet;
             // Ignore any messages that don't have a body so that we skip events.
             // Note: XHTML messages should always include a body so we should be ok. It's
             // possible that we may need special XHTML filtering in the future, however.

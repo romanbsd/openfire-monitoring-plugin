@@ -87,9 +87,12 @@ public class ConversationParticipation {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConversationParticipation that = (ConversationParticipation) o;
-        return Objects.equals(joined, that.joined) && Objects.equals(left, that.left) && Objects.equals(nickname, that.nickname);
+        if (!(o instanceof ConversationParticipation that)) return false;
+        return datesEqual(joined, that.joined) && datesEqual(left, that.left) && Objects.equals(nickname, that.nickname);
+    }
+
+    private static boolean datesEqual(Date left, Date right) {
+        return left == null ? right == null : right != null && left.getTime() == right.getTime();
     }
 
     @Override

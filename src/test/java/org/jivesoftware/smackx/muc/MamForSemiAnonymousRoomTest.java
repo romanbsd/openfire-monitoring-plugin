@@ -138,7 +138,7 @@ public class MamForSemiAnonymousRoomTest extends AbstractMamTest
             .build();
 
         // Execute system under test.
-        final XMPPException.XMPPErrorException e = assertThrows(XMPPException.XMPPErrorException.class, () -> {
+        assertThrows(XMPPException.XMPPErrorException.class, () -> {
             mucMamManagerUserTwo.queryArchive(mamQueryArgs);
         }, "Expected an error to be returned when a query using a 'with' attribute specifying a real jid is performed in a semi-anonymous room (but no error was returned).");
         // TODO possibly assert error type?
@@ -166,7 +166,7 @@ public class MamForSemiAnonymousRoomTest extends AbstractMamTest
             .build();
 
         // Execute system under test.
-        final XMPPException.XMPPErrorException e = assertThrows(XMPPException.XMPPErrorException.class, () -> {
+        assertThrows(XMPPException.XMPPErrorException.class, () -> {
             mucMamManagerUserTwo.queryArchive(mamQueryArgs);
         }, "Expected an error to be returned when a query using a 'with' attribute specifying a real jid is performed in a semi-anonymous room (but no error was returned).");
         // TODO possibly assert error type?
@@ -348,7 +348,7 @@ public class MamForSemiAnonymousRoomTest extends AbstractMamTest
      * user.
      */
     @Override // Sadly, the SINT test framework requires a method in the child class. Working around code duplication using this override that delegates to the parent class.
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testPersonalMamIncludesDirectMessagesWithRealFullJidFilter() throws Exception
     {
         super.testPersonalMamIncludesDirectMessagesWithRealFullJidFilter();
@@ -398,7 +398,7 @@ public class MamForSemiAnonymousRoomTest extends AbstractMamTest
      * Verifies that archived private messages that were shared in a semi-anonymous room and are retrieved by a regular
      * participant do not contain the real JID of the sender.
      */
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testPrivateMessagesDoNotContainRealJidForParticipant() throws Exception
     {
         // Setup test fixture.
@@ -438,7 +438,7 @@ public class MamForSemiAnonymousRoomTest extends AbstractMamTest
      * Verifies that archived public messages that were shared in a semi-anonymous room and are retrieved by a regular
      * participant do not contain the real JID of the sender.
      */
-    @SmackIntegrationTest()
+    @SmackIntegrationTest
     public void testMucMessagesDoNotContainRealJidForParticipant() throws Exception
     {
         // Setup test fixture.

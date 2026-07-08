@@ -37,8 +37,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -91,7 +91,7 @@ public class ArchiveIndexer extends OpenSearchIndexer
             return lastModified;
         }
 
-        final SortedMap<Long, Boolean> externalMetaData = extractMetaData(conversationIDs);
+        final NavigableMap<Long, Boolean> externalMetaData = extractMetaData(conversationIDs);
         conversationIDs.addAll(conversationsPendingDeletion);
         conversationsPendingDeletion.clear();
 
@@ -114,7 +114,7 @@ public class ArchiveIndexer extends OpenSearchIndexer
             return Instant.EPOCH;
         }
 
-        final SortedMap<Long, Boolean> conversationMetadata = findAllConversations();
+        final NavigableMap<Long, Boolean> conversationMetadata = findAllConversations();
         conversationsPendingDeletion.forEach(conversationMetadata::remove);
         conversationsPendingDeletion.clear();
 
@@ -126,9 +126,9 @@ public class ArchiveIndexer extends OpenSearchIndexer
         return indexConversations(conversationMetadata, true);
     }
 
-    private SortedMap<Long, Boolean> findAllConversations()
+    private NavigableMap<Long, Boolean> findAllConversations()
     {
-        SortedMap<Long, Boolean> externalMetaData = new TreeMap<>();
+        NavigableMap<Long, Boolean> externalMetaData = new TreeMap<>();
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -169,9 +169,9 @@ public class ArchiveIndexer extends OpenSearchIndexer
         return results;
     }
 
-    private SortedMap<Long, Boolean> extractMetaData(final List<Long> conversationIDs)
+    private NavigableMap<Long, Boolean> extractMetaData(final List<Long> conversationIDs)
     {
-        final SortedMap<Long, Boolean> results = new TreeMap<>();
+        final NavigableMap<Long, Boolean> results = new TreeMap<>();
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -193,7 +193,7 @@ public class ArchiveIndexer extends OpenSearchIndexer
         return results;
     }
 
-    private Instant indexConversations(final SortedMap<Long, Boolean> conversations, final boolean indexRebuild) throws IOException
+    private Instant indexConversations(final NavigableMap<Long, Boolean> conversations, final boolean indexRebuild) throws IOException
     {
         if (conversations.isEmpty()) {
             return Instant.EPOCH;

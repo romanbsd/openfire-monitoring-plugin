@@ -91,7 +91,7 @@ public abstract class OpenSearchIndexer
             final OpenSearchClientHolder.InstantCursor cursor = OpenSearchClientHolder.readCursor(logName);
             if (cursor.schemaVersion() < schemaVersion || cursor.lastModified().equals(Instant.EPOCH)) {
                 Log.info("OpenSearch index {} requires rebuild (schema {} vs required {}).", getIndexName(), cursor.schemaVersion(), schemaVersion);
-                taskEngine.submit(this::rebuildIndex);
+                submitUnchecked(this::rebuildIndexUnchecked);
             }
         } catch (IOException e) {
             Log.error("An exception occurred while initializing the OpenSearch index {}.", getIndexName(), e);
@@ -162,7 +162,7 @@ public abstract class OpenSearchIndexer
         rebuildInProgress = true;
         rebuildFuture = new OpenSearchClientHolder.RebuildFuture();
 
-        taskEngine.submit(() -> {
+        submitUnchecked(() -> {
             Log.debug("Rebuilding the OpenSearch index {}...", getIndexName());
             final Instant start = Instant.now();
             try {
@@ -180,6 +180,18 @@ public abstract class OpenSearchIndexer
         });
 
         return rebuildFuture;
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void rebuildIndexUnchecked()
+    {
+        rebuildIndex();
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void submitUnchecked(final Runnable task)
+    {
+        taskEngine.submit(task);
     }
 
     public Future<Integer> getIndexRebuildProgress()

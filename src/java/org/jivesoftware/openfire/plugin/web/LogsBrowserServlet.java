@@ -1,5 +1,6 @@
 package org.jivesoftware.openfire.plugin.web;
 
+import com.google.common.base.Splitter;
 import com.reucon.openfire.plugin.archive.impl.MucMamPersistenceManager;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.XMPPServer;
@@ -77,20 +78,21 @@ public class LogsBrowserServlet extends HttpServlet
         final List<String> segments = splitAndDecodePath(request.getPathInfo());
 
         switch (segments.size()) {
-            case 0:
+            case 0 -> {
                 renderServiceSelection(response, basePath);
-                return;
-            case 1:
+            }
+            case 1 -> {
                 renderRoomSelection(response, basePath, segments.get(0));
-                return;
-            case 2:
+            }
+            case 2 -> {
                 renderDateSelection(response, basePath, segments.get(0), segments.get(1));
-                return;
-            case 3:
+            }
+            case 3 -> {
                 renderMessageLog(request, response, basePath, segments.get(0), segments.get(1), segments.get(2));
-                return;
-            default:
+            }
+            default -> {
                 renderError(response, HttpServletResponse.SC_NOT_FOUND, basePath, "Unknown URL.", "Use /logs/, /logs/{service}/, /logs/{service}/{room}/, or /logs/{service}/{room}/{date}.");
+            }
         }
     }
 
@@ -307,7 +309,7 @@ public class LogsBrowserServlet extends HttpServlet
     private List<RoomOption> getPublicRooms( final MultiUserChatService service )
     {
         if (service == null) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         //TODO: https://github.com/igniterealtime/openfire-monitoring-plugin/issues/228
@@ -347,11 +349,11 @@ public class LogsBrowserServlet extends HttpServlet
         } catch (RuntimeException e) {
             // Be defensive: malformed/empty archive rows should not break public browsing.
             Log.warn("Unable to determine available log dates for room '{}'. Returning no dates.", room, e);
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         if (start == null || end == null) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         final List<String> dates = new ArrayList<>();
@@ -368,7 +370,7 @@ public class LogsBrowserServlet extends HttpServlet
         Connection connection = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        List<LogsBrowserServlet.Message> msgs = new LinkedList<>();
+        List<LogsBrowserServlet.Message> msgs = new ArrayList<>();
         try {
             connection = DbConnectionManager.getConnection();
             pstmt = connection.prepareStatement( "SELECT sender, nickname, logTime, body from ofMucConversationLog WHERE roomID = ? AND logTime >= ? AND logTime < ? ORDER BY logTime ASC" );
@@ -404,11 +406,11 @@ public class LogsBrowserServlet extends HttpServlet
     private static List<String> splitAndDecodePath( final String pathInfo )
     {
         if (pathInfo == null || pathInfo.isEmpty() || "/".equals(pathInfo)) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         final String normalized = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
-        final String[] rawSegments = normalized.split("/");
+        final Iterable<String> rawSegments = Splitter.on('/').split(normalized);
         final List<String> result = new ArrayList<>();
         for (final String segment : rawSegments) {
             if (!segment.isEmpty()) {
@@ -889,6 +891,4 @@ public class LogsBrowserServlet extends HttpServlet
         }
     }
 }
-
-
 

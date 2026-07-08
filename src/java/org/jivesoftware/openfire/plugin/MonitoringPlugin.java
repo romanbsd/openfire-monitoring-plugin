@@ -144,11 +144,12 @@ public class MonitoringPlugin implements Plugin, PluginListener
         return persistenceManager;
     }
 
+    @Override
     public void initializePlugin(PluginManager manager, File pluginDirectory) {
         Log = LoggerFactory.getLogger(MonitoringPlugin.class);
 
         // Issue #113: Migrate full JIDs in the database
-        TaskEngine.getInstance().submit( new DatabaseUpdateSplitJIDsTask() );
+        submitUnchecked(new DatabaseUpdateSplitJIDsTask());
 
         persistenceManager = new JdbcPersistenceManager();
         mucPersistenceManager = new MucMamPersistenceManager();
@@ -188,6 +189,7 @@ public class MonitoringPlugin implements Plugin, PluginListener
         messageIndexer.start();
     }
 
+    @Override
     public void destroyPlugin() {
 
         // Issue #114: Shut down the task-engine first, to prevent tasks from being executed in a shutting-down environment.
@@ -261,6 +263,11 @@ public class MonitoringPlugin implements Plugin, PluginListener
         OpenSearchClientHolder.closeClient();
         
         instance = null;
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void submitUnchecked(final Runnable task) {
+        TaskEngine.getInstance().submit(task);
     }
 
 

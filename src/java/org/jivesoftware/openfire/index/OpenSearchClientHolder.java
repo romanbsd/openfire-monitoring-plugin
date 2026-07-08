@@ -15,6 +15,7 @@
  */
 package org.jivesoftware.openfire.index;
 
+import com.google.common.base.Splitter;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
@@ -233,11 +234,11 @@ public final class OpenSearchClientHolder {
         }
         try {
             final String content = Files.readString(cursorFile, StandardCharsets.UTF_8).trim();
-            final String[] parts = content.split(",");
-            final java.time.Instant instant = parts.length > 0 && !parts[0].isBlank()
-                ? java.time.Instant.ofEpochMilli(Long.parseLong(parts[0]))
+            final List<String> parts = Splitter.on(',').splitToList(content);
+            final java.time.Instant instant = !parts.isEmpty() && !parts.get(0).isBlank()
+                ? java.time.Instant.ofEpochMilli(Long.parseLong(parts.get(0)))
                 : java.time.Instant.EPOCH;
-            final int schemaVersion = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            final int schemaVersion = parts.size() > 1 ? Integer.parseInt(parts.get(1)) : 0;
             return new InstantCursor(instant, schemaVersion);
         } catch (IOException | NumberFormatException e) {
             Log.warn("Unable to read OpenSearch cursor file for {}.", logName, e);
@@ -279,22 +280,27 @@ public final class OpenSearchClientHolder {
     public static class RebuildFuture implements Future<Integer> {
         private int percentageDone = 0;
 
+        @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
+        @Override
         public boolean isCancelled() {
             return false;
         }
 
+        @Override
         public boolean isDone() {
             return percentageDone == 100;
         }
 
+        @Override
         public Integer get() {
             return percentageDone;
         }
 
+        @Override
         public Integer get(long timeout, @NonNull TimeUnit unit) {
             return percentageDone;
         }

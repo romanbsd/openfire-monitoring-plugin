@@ -23,12 +23,9 @@ import org.jivesoftware.openfire.plugin.MonitoringPlugin;
 import org.jivesoftware.openfire.reporting.graph.GraphEngine;
 import org.jivesoftware.openfire.stats.Statistic;
 import org.jivesoftware.util.JiveGlobals;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +37,6 @@ import java.util.Map;
  * @author Aaron Johnson
  */
 public class StatsAction {
-
-    private static final Logger Log = LoggerFactory.getLogger(StatsAction.class);
 
     /**
      * Retrieves a map containing the high / low and current count statistics
@@ -65,8 +60,6 @@ public class StatsAction {
     /**
      * Retrieve a a single stat update given a stat name and the name of a
      * time period.
-     * @param statkey
-     * @param timePeriod
      * @return map containing keys 'low', 'high' and 'count'.
      */
     public Map<String, Object> getUpdatedStat(String statkey, String timePeriod) {
@@ -152,13 +145,10 @@ public class StatsAction {
         return new String[]{low, high};
     }
 
-    private final Comparator<Conversation> conversationComparator = (conv1, conv2) -> conv2.getLastActivity().compareTo(conv1.getLastActivity());
-
     /**
      * Formats a given time using the <code>DateFormat.MEDIUM</code>. In the 'en' locale, this
      * should result in a time formatted like this: 4:59:23 PM. The seconds are necessary when
      * displaying time in the conversation scroller.
-     * @param time
      * @return string a date formatted using DateFormat.MEDIUM
      */
     public static String formatTimeLong(Date time) {

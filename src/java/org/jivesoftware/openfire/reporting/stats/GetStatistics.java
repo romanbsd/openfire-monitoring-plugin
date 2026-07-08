@@ -40,10 +40,12 @@ public class GetStatistics implements ClusterTask<Map<String, Double>> {
     
     private Map<String, Double> samples;
 
+    @Override
     public Map<String, Double> getResult() {
         return samples;
     }
 
+    @Override
     public void run() {
         samples = new HashMap<>();
         for (Map.Entry<String, Statistic> statisticEntry : StatisticsManager.getInstance().getAllStatistics()) {
@@ -64,10 +66,12 @@ public class GetStatistics implements ClusterTask<Map<String, Double>> {
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) {
         // Ignore
     }
 
+    @Override
     public void readExternal(ObjectInput in) {
         // Ignore
     }

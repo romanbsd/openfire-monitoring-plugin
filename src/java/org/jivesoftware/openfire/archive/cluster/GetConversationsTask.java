@@ -48,10 +48,12 @@ public class GetConversationsTask implements ClusterTask<Collection<String>>
 
     private Collection<String> conversationsXml;
 
+    @Override
     public Collection<String> getResult() {
         return conversationsXml;
     }
 
+    @Override
     public void run() {
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
         if (plugin.isEmpty()) {
@@ -74,10 +76,12 @@ public class GetConversationsTask implements ClusterTask<Collection<String>>
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) {
         // Do nothing
     }
 
+    @Override
     public void readExternal(ObjectInput in) {
         // Do nothing
     }

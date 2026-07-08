@@ -22,6 +22,7 @@ public abstract class AbstractIQHandler extends IQHandler {
         this.info = new IQHandlerInfo(elementName, namespace);
     }
 
+    @Override
     public final IQHandlerInfo getInfo() {
         return info;
     }

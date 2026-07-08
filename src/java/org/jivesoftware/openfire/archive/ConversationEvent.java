@@ -204,9 +204,12 @@ public class ConversationEvent {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConversationEvent that = (ConversationEvent) o;
-        return type == that.type && Objects.equals(date, that.date) && Objects.equals(body, that.body) && Objects.equals(stanza, that.stanza) && Objects.equals(sender, that.sender) && Objects.equals(receiver, that.receiver) && Objects.equals(roomID, that.roomID) && Objects.equals(roomJID, that.roomJID) && Objects.equals(user, that.user) && Objects.equals(nickname, that.nickname);
+        if (!(o instanceof ConversationEvent that)) return false;
+        return type == that.type && datesEqual(date, that.date) && Objects.equals(body, that.body) && Objects.equals(stanza, that.stanza) && Objects.equals(sender, that.sender) && Objects.equals(receiver, that.receiver) && Objects.equals(roomID, that.roomID) && Objects.equals(roomJID, that.roomJID) && Objects.equals(user, that.user) && Objects.equals(nickname, that.nickname);
+    }
+
+    private static boolean datesEqual(Date left, Date right) {
+        return left == null ? right == null : right != null && left.getTime() == right.getTime();
     }
 
     @Override

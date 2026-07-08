@@ -69,7 +69,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         .setPlugin(MonitoringConstants.PLUGIN_NAME)
         .build();
 
-    protected final String NAMESPACE;
+    protected final String namespace;
     protected ExecutorService executorService;
     protected PacketRouter router;
 
@@ -77,7 +77,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
     IQQueryHandler(final String moduleName, final String namespace) {
         super(moduleName, "query", namespace);
-        NAMESPACE = namespace;
+        this.namespace = namespace;
     }
 
     @Override
@@ -115,6 +115,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         super.destroy();
     }
 
+    @Override
     public IQ handleIQ( final IQ packet ) {
 
         if(packet.getType().equals(IQ.Type.get)) {
@@ -259,20 +260,22 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         final Instant targetEndDate = Instant.now(); // TODO or, the timestamp of the element referenced by 'before' from RSM, if that's set.
 
         final QueryRequest finalQueryRequest = queryRequest;
-        executorService.submit(() -> {
+        submitUnchecked(() -> {
             try
             {
                 Log.debug("Retrieving messages from archive...");
                 Duration eta;
                 Duration totalPause = Duration.ZERO;
                 Instant start = Instant.now();
-                while ( !(eta = conversationManager.availabilityETA( targetEndDate )).isZero() )
+                eta = conversationManager.availabilityETA( targetEndDate );
+                while ( !eta.isZero() )
                 {
                     try
                     {
                         Log.trace( "Not all data that is being requested has been written to the database yet. Delaying request processing for {}", eta );
                         Thread.sleep( eta.toMillis() );
                         totalPause = totalPause.plus( eta );
+                        eta = conversationManager.availabilityETA( targetEndDate );
                     }
                     catch ( InterruptedException e )
                     {
@@ -387,7 +390,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
         try
         {
-	        ZonedDateTime nowDate = ZonedDateTime.now();
+	        ZonedDateTime nowDate = ZonedDateTime.now(ZoneId.systemDefault());
 	        ZonedDateTime newDate = nowDate.minusDays(conversationManager.getMaxRetrievable().toDays());
    
 	        Date startDate = null;
@@ -481,7 +484,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
             // This controls if a message during message retrieval is ignored (leading to empty results) or triggers an XMPP error stanza response.
             Log.error("An exception has occurred while retrieving messages: ", e);
             if (IGNORE_RETRIEVAL_EXCEPTIONS.getValue()) {
-                return new LinkedList<>();
+                return new ArrayList<>();
             } else {
                 throw new DataRetrievalException(e);
             }
@@ -497,46 +500,10 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
     abstract boolean usesUniqueAndStableIDs();
 
     /**
-     * Send result packet to client acknowledging query.
-     * @param packet Received query packet
-     */
-    private void sendAcknowledgementResult(IQ packet) {
-        IQ result = IQ.createResultIQ(packet);
-        router.route(result);
-    }
-
-    /**
-     * Send final message back to client following query.
-     * @param from to respond to
-     * @param queryRequest Received query request
-     */
-    private void sendFinalMessage(JID from, final QueryRequest queryRequest) {
-
-        Message finalMessage = new Message();
-        finalMessage.setTo(from);
-        Element fin = finalMessage.addChildElement("fin", NAMESPACE);
-        if(queryRequest.getQueryid() != null) {
-            fin.addAttribute("queryid", queryRequest.getQueryid());
-        }
-
-        XmppResultSet resultSet = queryRequest.getResultSet();
-        if (resultSet != null) {
-            fin.add(resultSet.createResultElement());
-
-            if(resultSet.isComplete()) {
-                fin.addAttribute("complete", "true");
-            }
-        }
-
-        router.route(finalMessage);
-    }
-
-    /**
      * Send archived message to requesting client
      * @param from to recieve message
      * @param queryRequest Query request made by client
      * @param archivedMessage Message to send to client
-     * @return
      */
     private void sendMessageResult(JID from, QueryRequest queryRequest, ArchivedMessage archivedMessage) {
         final Message stanza;
@@ -579,7 +546,7 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         }
 
         // TODO Can/should we use a SSID instead of the database ID for the result 'ID' attribute value?
-        messagePacket.addExtension(new Result(fwd, NAMESPACE, queryRequest.getQueryid(), archivedMessage.getId().toString()));
+        messagePacket.addExtension(new Result(fwd, namespace, queryRequest.getQueryid(), archivedMessage.getId().toString()));
         router.route(messagePacket);
     }
 
@@ -591,11 +558,11 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
 
         IQ result = IQ.createResultIQ(packet);
 
-        Element query = result.setChildElement("query", NAMESPACE);
+        Element query = result.setChildElement("query", namespace);
 
         DataForm form = new DataForm(DataForm.Type.form);
         form.addField("FORM_TYPE", null, FormField.Type.hidden);
-        form.getField("FORM_TYPE").addValue(NAMESPACE);
+        form.getField("FORM_TYPE").addValue(namespace);
         form.addField("with", "Author of message", FormField.Type.jid_single);
         form.addField("start", "Message sent on or after timestamp.", FormField.Type.text_single);
         form.addField("end", "Message sent on or before timestamp.", FormField.Type.text_single);
@@ -626,10 +593,15 @@ abstract public class IQQueryHandler extends AbstractIQHandler implements
         return results;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void submitUnchecked(final Runnable task) {
+        executorService.submit(task);
+    }
+
     @Override
     public Iterator<String> getFeatures() {
         final List<String> result = new ArrayList<>();
-        result.add(NAMESPACE);
+        result.add(namespace);
         if (OpenSearchIndexer.isSearchEnabled()) {
             result.add("urn:xmpp:fulltext:0");
         }

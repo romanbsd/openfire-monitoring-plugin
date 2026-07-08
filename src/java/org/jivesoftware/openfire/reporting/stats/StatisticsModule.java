@@ -114,11 +114,13 @@ public class StatisticsModule {
         Statistic serverToServerStatistic = new i18nStatistic(SERVER_2_SERVER_SESSIONS_KEY, MonitoringConstants.NAME,
                 Statistic.Type.amount)
         {
+            @Override
             public double sample() {
                 return (SessionManager.getInstance().getIncomingServers().size() + SessionManager.
                         getInstance().getOutgoingServers().size());
             }
 
+            @Override
             public boolean isPartialSample() {
                 return false;
             }
@@ -136,10 +138,12 @@ public class StatisticsModule {
     private void addActiveSessionsStatistic() {
         // Register a statistic.
         Statistic activeSessionStatistic = new i18nStatistic(SESSIONS_KEY, MonitoringConstants.NAME, Statistic.Type.amount) {
+            @Override
             public double sample() {
                 return SessionManager.getInstance().getUserSessionsCount(false);
             }
 
+            @Override
             public boolean isPartialSample() {
                 return false;
             }
@@ -154,10 +158,12 @@ public class StatisticsModule {
     private void addPacketStatistic() {
         // Register a statistic.
         Statistic packetTrafficStatistic = new i18nStatistic(TRAFFIC_KEY, MonitoringConstants.NAME, Statistic.Type.amount) {
+            @Override
             public double sample() {
                 return packetCount.get();
             }
 
+            @Override
             public boolean isPartialSample() {
                 return true;
             }

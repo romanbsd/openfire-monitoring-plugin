@@ -1016,20 +1016,6 @@ public abstract class AbstractMamTest extends AbstractMultiUserChatIntegrationTe
     }
 
     /**
-     * Asserts that a MAM query result contains a message with the specified body,
-     * with a custom error message prefix.
-     *
-     * @param message The custom message prefix to prepend to the assertion failure message
-     * @param mamQuery The MAM query result to check
-     * @param messageBody The expected message body to search for
-     */
-    private void assertMamResultContains(String message, MamManager.MamQuery mamQuery, String messageBody)
-    {
-        assertTrue(message + " - Expected MAM result to contain message with body '" + messageBody + "' (but it did not)",
-            mamQuery.getMessages().stream().anyMatch(msg -> msg.getBody().equals(messageBody)));
-    }
-
-    /**
      * Asserts that a MAM query result <em>does not contain</em> a message with the specified body.
      *
      * @param mamQuery The MAM query result to check

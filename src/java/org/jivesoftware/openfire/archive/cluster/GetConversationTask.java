@@ -54,10 +54,12 @@ public class GetConversationTask implements ClusterTask<String>
         this.conversationID = conversationID;
     }
 
+    @Override
     public String getResult() {
         return conversationXml;
     }
 
+    @Override
     public void run() {
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
         if (plugin.isEmpty()) {
@@ -76,10 +78,12 @@ public class GetConversationTask implements ClusterTask<String>
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         ExternalizableUtil.getInstance().writeLong(out, conversationID);
     }
 
+    @Override
     public void readExternal(ObjectInput in) throws IOException {
         conversationID = ExternalizableUtil.getInstance().readLong(in);
     }

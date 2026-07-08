@@ -25,11 +25,7 @@ public class RESTExceptionMapper implements ExceptionMapper<ServiceException> {
     public RESTExceptionMapper() {
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.ws.rs.ext.ExceptionMapper#toResponse(java.lang.Throwable)
-     */
+    @Override
     public Response toResponse(ServiceException exception) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setResource(exception.getResource());

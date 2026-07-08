@@ -312,11 +312,12 @@ public class TaskEngine {
 
         private final TimerTask task;
 
-        public TimerTaskWrapper(TimerTask task) {
+        private TimerTaskWrapper(TimerTask task) {
             this.task = task;
         }
 
         @Override
+        @SuppressWarnings("FutureReturnValueIgnored")
         public void run() {
             executor.submit(task);
         }

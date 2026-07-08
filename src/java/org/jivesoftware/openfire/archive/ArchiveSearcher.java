@@ -349,7 +349,7 @@ public class ArchiveSearcher {
          *
          * @param conversationIDs the list of conversation IDs.
          */
-        public DatabaseQueryResults(List<Long> conversationIDs) {
+        private DatabaseQueryResults(List<Long> conversationIDs) {
             this.conversationIDs = conversationIDs;
         }
 
@@ -360,6 +360,7 @@ public class ArchiveSearcher {
 
                 private Conversation nextElement = null;
 
+                @Override
                 public boolean hasNext() {
                     if (nextElement == null) {
                         nextElement = getNextElement();
@@ -368,6 +369,7 @@ public class ArchiveSearcher {
                     return true;
                 }
 
+                @Override
                 public Conversation next() {
                     Conversation element;
                     if (nextElement != null) {
@@ -382,6 +384,7 @@ public class ArchiveSearcher {
                     return element;
                 }
 
+                @Override
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
@@ -416,7 +419,7 @@ public class ArchiveSearcher {
 
         private final List<Long> conversationIDs;
 
-        public OpenSearchQueryResults(List<Long> conversationIDs) {
+        private OpenSearchQueryResults(List<Long> conversationIDs) {
             this.conversationIDs = conversationIDs;
         }
 
@@ -427,6 +430,7 @@ public class ArchiveSearcher {
 
                 private Conversation nextElement = null;
 
+                @Override
                 public boolean hasNext() {
                     if (nextElement == null) {
                         nextElement = getNextElement();
@@ -435,6 +439,7 @@ public class ArchiveSearcher {
                     return true;
                 }
 
+                @Override
                 public Conversation next() {
                     Conversation element;
                     if (nextElement != null) {
@@ -449,6 +454,7 @@ public class ArchiveSearcher {
                     return element;
                 }
 
+                @Override
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }

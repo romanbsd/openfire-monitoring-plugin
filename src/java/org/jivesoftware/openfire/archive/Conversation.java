@@ -362,9 +362,12 @@ public class Conversation {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Conversation that = (Conversation) o;
-        return conversationID == that.conversationID && external == that.external && messageCount == that.messageCount && Objects.equals(participants, that.participants) && Objects.equals(startDate, that.startDate) && Objects.equals(lastActivity, that.lastActivity) && Objects.equals(roomID, that.roomID) && Objects.equals(room, that.room);
+        if (!(o instanceof Conversation that)) return false;
+        return conversationID == that.conversationID && external == that.external && messageCount == that.messageCount && Objects.equals(participants, that.participants) && datesEqual(startDate, that.startDate) && datesEqual(lastActivity, that.lastActivity) && Objects.equals(roomID, that.roomID) && Objects.equals(room, that.room);
+    }
+
+    private static boolean datesEqual(Date left, Date right) {
+        return left == null ? right == null : right != null && left.getTime() == right.getTime();
     }
 
     @Override

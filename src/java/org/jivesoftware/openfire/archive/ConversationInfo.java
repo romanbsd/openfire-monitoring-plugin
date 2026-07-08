@@ -18,6 +18,7 @@ package org.jivesoftware.openfire.archive;
 import org.jivesoftware.util.StringUtils;
 
 /**
+ * Summary information for an archived conversation.
  */
 public class ConversationInfo {
 

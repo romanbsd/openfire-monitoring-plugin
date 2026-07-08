@@ -38,6 +38,7 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
         this.server = server;
         this.element2Handlers = Collections.synchronizedMap(new HashMap<>());
         this.iqDispatcher = new AbstractIQHandler(iqDispatcherName, null, iqDispatcherNamespace) {
+            @Override
             public IQ handleIQ(IQ packet) throws UnauthorizedException {
                 if (!MonitoringPlugin.getInstance().isEnabled()) {
                     return error(packet,
@@ -70,9 +71,8 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
 
             final QName qName = QName.get( iqHandler.getInfo().getName(), iqHandler.getInfo().getNamespace() );
             element2Handlers.put(qName, iqHandler);
-            if (iqHandler instanceof ServerFeaturesProvider) {
-                for (Iterator<String> i = ((ServerFeaturesProvider) iqHandler)
-                        .getFeatures(); i.hasNext();) {
+            if (iqHandler instanceof ServerFeaturesProvider serverFeaturesProvider) {
+                for (Iterator<String> i = serverFeaturesProvider.getFeatures(); i.hasNext();) {
                     server.getIQDiscoInfoHandler().addServerFeature(i.next());
                 }
             }
@@ -106,9 +106,8 @@ public abstract class AbstractXepSupport implements UserFeaturesProvider {
                 Log.warn("Unable to stop and destroy {}", iqHandler.getClass());
             }
 
-            if (iqHandler instanceof ServerFeaturesProvider) {
-                for (Iterator<String> i = ((ServerFeaturesProvider) iqHandler)
-                        .getFeatures(); i.hasNext();) {
+            if (iqHandler instanceof ServerFeaturesProvider serverFeaturesProvider) {
+                for (Iterator<String> i = serverFeaturesProvider.getFeatures(); i.hasNext();) {
                     iqDiscoInfoHandler.removeServerFeature(i.next());
                 }
             }

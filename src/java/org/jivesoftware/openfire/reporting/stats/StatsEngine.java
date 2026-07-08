@@ -120,7 +120,7 @@ public class StatsEngine {
             try {
                 RrdDef rrdDef = new RrdDef(def[0].getDbPath(), STAT_RESOULUTION);
                 for (StatDefinition stat : def) {
-                    String dsType = determineDsType(stat.getStatistic());
+                    String dsType = determineDsType();
                     rrdDef.addDatasource(stat.getDatasourceName(), dsType, 5 * STAT_RESOULUTION, 0,
                             Double.NaN);
                 }
@@ -147,7 +147,7 @@ public class StatsEngine {
         }
     }
 
-    private String determineDsType(Statistic statistic) {
+    private String determineDsType() {
         return DsTypes.DT_GAUGE;
     }
 

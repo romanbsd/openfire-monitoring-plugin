@@ -15,6 +15,7 @@
  */
 package org.jivesoftware.openfire.reporting.graph;
 
+import com.google.common.base.Splitter;
 import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -97,7 +99,7 @@ public class GraphServlet extends HttpServlet {
                 statList.sort((stat1, stat2) -> {
                     String statName1 = statsViewer.getStatistic(stat1)[0].getName();
                     String statName2 = statsViewer.getStatistic(stat2)[0].getName();
-                    return statName1.toLowerCase().compareTo(statName2.toLowerCase());
+                    return statName1.toLowerCase(Locale.ROOT).compareTo(statName2.toLowerCase(Locale.ROOT));
                 });
                 charts = new JFreeChart[statList.size()];
                 stats = new Statistic[statList.size()];
@@ -111,7 +113,7 @@ public class GraphServlet extends HttpServlet {
                 charts = new JFreeChart[] {graphEngine.generateChart(statisticKey, width, height, graphcolor, dateRange[0], dateRange[1], (int)dateRange[2])};
                 stats = new Statistic[] {statsViewer.getStatistic(statisticKey)[0]};
             }
-            writePDFContent(request, response, charts, stats, dateRange[0], dateRange[1], width, height);
+            writePDFContent(response, charts, stats, dateRange[0], dateRange[1], width, height);
         } else {
             byte[] chart;
             if (sparkLines) {
@@ -129,7 +131,7 @@ public class GraphServlet extends HttpServlet {
         }
     }
 
-    private void writePDFContent(HttpServletRequest request, HttpServletResponse response, JFreeChart[] charts, Statistic[] stats, long starttime, long endtime, int width, int height) {
+    private void writePDFContent(HttpServletResponse response, JFreeChart[] charts, Statistic[] stats, long starttime, long endtime, int width, int height) {
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
              final PdfWriter writer = new PdfWriter(baos);
              final PdfDocument pdfDocument = new PdfDocument(writer)
@@ -167,7 +169,7 @@ public class GraphServlet extends HttpServlet {
 
                 // total hack: no idea what tags people are going to use in the description
                 // possibly recommend that we only use a <p> tag?
-                String[] paragraphs = stat.getDescription().split("<p>");
+                Iterable<String> paragraphs = Splitter.on("<p>").split(stat.getDescription());
                 for (String s : paragraphs) {
                     Paragraph p = new Paragraph(s);
                     document.add(p);

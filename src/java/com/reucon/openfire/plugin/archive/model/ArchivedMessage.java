@@ -219,6 +219,7 @@ public class ArchivedMessage {
         }
     }
 
+    @Override
     public String toString() {
 
         return "ArchivedMessage[id=" + id + "," +

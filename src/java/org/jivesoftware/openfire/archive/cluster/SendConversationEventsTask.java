@@ -57,10 +57,12 @@ public class SendConversationEventsTask implements ClusterTask<Void> {
         this.events = events;
     }
 
+    @Override
     public Void getResult() {
         return null;
     }
 
+    @Override
     public void run() {
         Log.debug("Processing {} chat events as received by other nodes.", events.size());
         final Optional<Plugin> plugin = XMPPServer.getInstance().getPluginManager().getPluginByName(MonitoringConstants.PLUGIN_NAME);
@@ -78,6 +80,7 @@ public class SendConversationEventsTask implements ClusterTask<Void> {
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         // ClassCastExceptions occur when using classes provided by a plugin during serialization (sometimes only after
         // reloading the plugin without restarting Openfire. This is why this implementation marshalls data as XML when
@@ -89,6 +92,7 @@ public class SendConversationEventsTask implements ClusterTask<Void> {
         }
     }
 
+    @Override
     public void readExternal(ObjectInput in) throws IOException {
         // ClassCastExceptions occur when using classes provided by a plugin during serialization (sometimes only after
         // reloading the plugin without restarting Openfire. This is why this implementation marshalls data as XML when
