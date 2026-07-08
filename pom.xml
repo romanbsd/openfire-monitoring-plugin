@@ -17,7 +17,7 @@
         <jrobin.version>1.7.1</jrobin.version>
         <jfreechart.version>1.0.13</jfreechart.version>
         <opensearch-java.version>3.9.0</opensearch-java.version>
-        <itext.version>7.2.6</itext.version>
+        <itext.version>9.6.0</itext.version>
         <orsonpdf.version>1.9.1</orsonpdf.version>
         <commons-io.version>2.22.0</commons-io.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
@@ -137,9 +137,14 @@
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>itext-core</artifactId>
             <version>${itext.version}</version>
             <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>bouncy-castle-adapter</artifactId>
+            <version>${itext.version}</version>
         </dependency>
         <dependency>
             <groupId>com.orsonpdf</groupId>

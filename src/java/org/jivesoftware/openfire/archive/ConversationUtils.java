@@ -22,9 +22,9 @@ import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.events.Event;
-import com.itextpdf.kernel.events.IEventHandler;
-import com.itextpdf.kernel.events.PdfDocumentEvent;
+import com.itextpdf.kernel.pdf.event.AbstractPdfDocumentEvent;
+import com.itextpdf.kernel.pdf.event.AbstractPdfDocumentEventHandler;
+import com.itextpdf.kernel.pdf.event.PdfDocumentEvent;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -361,7 +361,7 @@ public class ConversationUtils {
     /**
      * Writes a footer.
      */
-    public static class PDFEventListener implements IEventHandler {
+    public static class PDFEventListener extends AbstractPdfDocumentEventHandler {
         private final Document document;
 
         public PDFEventListener(Document document) {
@@ -369,7 +369,7 @@ public class ConversationUtils {
         }
 
         @Override
-        public void handleEvent(Event event) {
+        public void onAcceptedEvent(AbstractPdfDocumentEvent event) {
             try {
                 final URL resource = ConversationUtils.class.getClassLoader().getResource("images/pdf_generatedbyof.gif");
                 if (resource != null) {
