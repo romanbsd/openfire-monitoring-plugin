@@ -30,3 +30,4 @@ rpmbuild/
 debian/
 
 __pycache__/
+.codegraph/
