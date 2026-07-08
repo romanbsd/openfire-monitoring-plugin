@@ -72,7 +72,7 @@ public abstract class OpenSearchIndexer
         return OpenSearchClientHolder.indexName(indexSuffix);
     }
 
-    protected OpenSearchClient getClient() throws IOException {
+    protected OpenSearchClient getClient() {
         return OpenSearchClientHolder.getClient();
     }
 
@@ -124,12 +124,7 @@ public abstract class OpenSearchIndexer
         if (!OpenSearchClientHolder.isSearchEnabled()) {
             return 0;
         }
-        try {
-            return OpenSearchClientHolder.getIndexStoreSizeBytes(getClient(), getIndexName());
-        } catch (IOException e) {
-            Log.warn("Unable to determine OpenSearch index size for {}.", getIndexName(), e);
-            return 0;
-        }
+        return OpenSearchClientHolder.getIndexStoreSizeBytes(getClient(), getIndexName());
     }
 
     public void updateIndex()

@@ -27,7 +27,7 @@ public class PaginatedMucMessageOpenSearchQuery extends AbstractPaginatedMamMucQ
         super(startDate, endDate, owner, with, query);
     }
 
-    protected OpenSearchClient getClient() throws java.io.IOException {
+    protected OpenSearchClient getClient() {
         return OpenSearchClientHolder.getClient();
     }
 

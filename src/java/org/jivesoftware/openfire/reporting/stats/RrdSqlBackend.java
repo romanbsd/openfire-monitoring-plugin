@@ -46,7 +46,7 @@ public class RrdSqlBackend extends RrdBackend {
     public static void importRRD(String id, File rrdFile) throws IOException {
         // Read content from file
         FileInputStream stream = null;
-        byte[] bytes = null;
+        byte[] bytes;
         try {
             stream = new FileInputStream(rrdFile);
             // Create the byte array to hold the data

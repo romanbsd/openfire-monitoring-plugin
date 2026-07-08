@@ -27,7 +27,7 @@ public class PaginatedMucMessageFromOpenfireOpenSearchQuery extends AbstractPagi
         super(startDate, endDate, room, with, query);
     }
 
-    protected OpenSearchClient getClient() throws java.io.IOException {
+    protected OpenSearchClient getClient() {
         if (!OpenSearchClientHolder.isSearchEnabled()) {
             throw new IllegalStateException("Unable to obtain OpenSearch client! The Monitoring plugin search functionality is not configured.");
         }

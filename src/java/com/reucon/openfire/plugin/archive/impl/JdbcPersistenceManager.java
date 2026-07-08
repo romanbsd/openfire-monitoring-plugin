@@ -88,8 +88,8 @@ public class JdbcPersistenceManager implements PersistenceManager {
         final int maxResults = xmppResultSet.getMax() != null ? xmppResultSet.getMax() : DEFAULT_MAX;
         final boolean isPagingBackwards = xmppResultSet.isPagingBackwards();
 
-        List<ArchivedMessage> msgs = Collections.emptyList();
-        int totalCount = 0;
+        List<ArchivedMessage> msgs;
+        int totalCount;
         if ( query != null && !query.isEmpty() ) {
             if (!OpenSearchIndexer.isSearchEnabled()) {
                 throw new DataRetrievalException("Unable to process a search request that contains a text-based query, as the full-text index functionality has been disabled by configuration.");

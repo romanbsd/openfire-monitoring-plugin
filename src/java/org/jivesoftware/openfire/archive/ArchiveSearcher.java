@@ -236,7 +236,6 @@ public class ArchiveSearcher {
         if (filterRoom) {
             if (!whereSet) {
                 query.append(" WHERE");
-                whereSet = true;
             }
             else {
                 query.append(" AND");

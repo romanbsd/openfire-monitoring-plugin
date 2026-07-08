@@ -30,7 +30,7 @@ public class PaginatedMessageOpenSearchQuery extends AbstractPaginatedMamQuery
         super(startDate, endDate, archiveOwner, with, query);
     }
 
-    protected OpenSearchClient getClient() throws java.io.IOException {
+    protected OpenSearchClient getClient() {
         return OpenSearchClientHolder.getClient();
     }
 
