@@ -1,3 +1,6 @@
+# OpenFire + OpenSearch stack for local dev and e2e tests.
+#   docker compose up -d --build
+#   cd e2e && npm test
 services:
   opensearch:
     image: opensearchproject/opensearch:2.19.6
@@ -15,31 +18,32 @@ services:
         soft: 65536
         hard: 65536
     ports:
-      - "9200:9200"
+      - "${OPENSEARCH_PORT:-9200}:9200"
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9200 >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 60s
+      # Wait until the HTTP API is up and the cluster accepts requests (not just "container started").
+      test: ["CMD-SHELL", "curl -sfS 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   openfire:
     build:
       context: .
       dockerfile: docker/openfire/Dockerfile
       args:
-        OPENFIRE_VERSION: "5.1.0"
+        OPENFIRE_VERSION: "5.1.1"
     depends_on:
       opensearch:
         condition: service_healthy
     ports:
-      - "5222:5222"
-      - "5269:5269"
-      - "7070:7070"
-      - "7443:7443"
-      - "9090:9090"
+      - "${OPENFIRE_XMPP_PORT:-5222}:5222"
+      - "${OPENFIRE_S2S_PORT:-5269}:5269"
+      - "${OPENFIRE_BOSH_PORT:-7070}:7070"
+      - "${OPENFIRE_SECURE_BOSH_PORT:-7443}:7443"
+      - "${OPENFIRE_ADMIN_PORT:-9090}:9090"
     volumes:
       - openfire-data:/var/lib/openfire
       - openfire-logs:/var/log/openfire

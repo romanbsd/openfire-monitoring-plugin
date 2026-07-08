@@ -30,4 +30,7 @@ rpmbuild/
 debian/
 
 __pycache__/
+.venv-smoke-test/
+e2e/node_modules/
 .codegraph/
+.serena/

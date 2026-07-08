@@ -55,6 +55,37 @@ copy_provided_plugins() {
   done
 }
 
+apply_search_config() {
+  local target="${OPENFIRE_DATA_DIR}/conf/openfire.xml"
+  if [[ ! -f "${target}" ]]; then
+    return 0
+  fi
+  if grep -Fq '<host>opensearch</host>' "${target}"; then
+    return 0
+  fi
+
+  echo "Applying OpenSearch configuration to ${target}"
+  if ! grep -q '<conversation>' "${target}"; then
+    xmlstarlet ed -L -s "/jive" -t elem -n "conversation" -v "" "${target}"
+  fi
+  if grep -q '<search>' "${target}"; then
+    xmlstarlet ed -L -d "/jive/conversation/search" "${target}"
+  fi
+  xmlstarlet ed -L \
+    -s "/jive/conversation" -t elem -n "search" -v "" \
+    -s "/jive/conversation/search" -t elem -n "index-enabled" -v "true" \
+    -s "/jive/conversation/search" -t elem -n "updateInterval" -v "5" \
+    -s "/jive/conversation/search" -t elem -n "opensearch" -v "" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "host" -v "opensearch" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "port" -v "9200" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "scheme" -v "http" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "username" -v "" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "password" -v "" \
+    -s "/jive/conversation/search/opensearch" -t elem -n "indexPrefix" -v "monitoring" \
+    "${target}"
+  chown ${OPENFIRE_USER}:${OPENFIRE_USER} "${target}"
+}
+
 if [[ ${1:0:1} = '-' ]]; then
   EXTRA_ARGS="$@"
   set --
@@ -62,6 +93,7 @@ fi
 
 rewire_openfire
 initialize_data_dir
+apply_search_config
 initialize_log_dir
 copy_provided_plugins
 

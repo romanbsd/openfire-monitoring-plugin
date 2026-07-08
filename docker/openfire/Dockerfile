@@ -5,7 +5,7 @@
 #   ./docker/openfire/build.sh
 #   docker build -f docker/openfire/Dockerfile -t openfire-monitoring-plugin-openfire .
 
-ARG OPENFIRE_VERSION=5.1.0
+ARG OPENFIRE_VERSION=5.1.1
 
 # ---------------------------------------------------------------------------
 # Monitoring plugin
@@ -91,6 +91,10 @@ ENV OPENFIRE_USER=openfire \
     OPENFIRE_DATA_DIR=/var/lib/openfire \
     OPENFIRE_LOG_DIR=/var/log/openfire \
     OPENFIRE_VERSION="${OPENFIRE_VERSION}"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends xmlstarlet \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=skeleton-runtime /etc/passwd /etc/shadow /etc/group /etc/
 COPY --chown=${OPENFIRE_USER}:${OPENFIRE_USER} --from=skeleton-runtime ${OPENFIRE_DATA_DIR} ${OPENFIRE_DATA_DIR}

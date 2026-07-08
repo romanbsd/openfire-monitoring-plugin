@@ -25,22 +25,11 @@
     </search>
   </conversation>
 
-  <autosetup>
-    <run>true</run>
-    <locale>en</locale>
-    <xmpp>
-      <domain>localhost</domain>
-      <fqdn>localhost</fqdn>
-    </xmpp>
-    <database>
-      <mode>embedded</mode>
-    </database>
-    <admin>
-      <email>admin@localhost</email>
-      <password>admin</password>
-    </admin>
-    <authprovider>
-      <mode>default</mode>
-    </authprovider>
-  </autosetup>
+  <setup>true</setup>
+  <locale>en</locale>
+  <fqdn>localhost</fqdn>
+  <admin>
+    <email>admin@localhost</email>
+    <password>admin</password>
+  </admin>
 </jive>
