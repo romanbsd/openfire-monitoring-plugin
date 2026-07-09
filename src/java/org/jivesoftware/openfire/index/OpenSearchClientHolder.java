@@ -25,11 +25,16 @@ import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.SystemProperty;
 import org.jspecify.annotations.NonNull;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
+import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.Conflicts;
+import org.opensearch.client.opensearch._types.Refresh;
+import org.opensearch.client.opensearch._types.Script;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.BulkRequest;
 import org.opensearch.client.opensearch.core.BulkResponse;
 import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
+import org.opensearch.client.opensearch.core.UpdateByQueryRequest;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.opensearch.client.transport.httpclient5.ApacheHttpClient5Transport;
 import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
@@ -207,6 +212,42 @@ public final class OpenSearchClientHolder {
         openSearchClient.deleteByQuery(new DeleteByQueryRequest.Builder()
             .index(indexName)
             .query(query)
+            // Version conflicts are common when a concurrent indexer touches the same docs.
+            .conflicts(Conflicts.Proceed)
+            .refresh(Refresh.True)
+            .build());
+    }
+
+    /**
+     * Sets {@code body}/{@code retracted}/{@code contentStamp} on matching docs.
+     * Noops when an existing stamp is newer. Pass {@code retracted=true} (and empty body) to tombstone.
+     */
+    public static void updateContentByQuery(
+        final OpenSearchClient openSearchClient,
+        final String indexName,
+        final Query query,
+        final String body,
+        final boolean retracted,
+        final long contentStamp
+    ) throws IOException {
+        openSearchClient.updateByQuery(new UpdateByQueryRequest.Builder()
+            .index(indexName)
+            .query(query)
+            .conflicts(Conflicts.Proceed)
+            .script(Script.of(s -> s.inline(i -> i
+                .source(
+                    "if (ctx._source.contentStamp != null && ctx._source.contentStamp > params.stamp) {"
+                        + " ctx.op = 'noop'; "
+                        + "} else {"
+                        + " ctx._source.body = params.body;"
+                        + " ctx._source.contentStamp = params.stamp;"
+                        + " ctx._source.retracted = params.retracted;"
+                        + "}"
+                )
+                .params("body", JsonData.of(body == null ? "" : body))
+                .params("stamp", JsonData.of(contentStamp))
+                .params("retracted", JsonData.of(retracted))
+            )))
             .build());
     }
 

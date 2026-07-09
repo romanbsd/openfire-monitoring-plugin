@@ -24,6 +24,7 @@ import org.jivesoftware.openfire.index.OpenSearchQueryHelper;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.openfire.muc.MultiUserChatService;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Executes modifier-based message search against OpenSearch indexes and hydrates hits from the DB.
+ * Executes modifier-based message search against OpenSearch indexes.
+ * Snippets come from the indexed body; SQL is used only for authz/existence and sender fallback.
  */
 public final class MessageSearchService {
 
@@ -164,6 +166,7 @@ public final class MessageSearchService {
         addFromFilters(filters, scope.getFromJids());
         addDateFilters(filters, request, "sentDate");
         addCursorFilters(filters, request, "sentDate");
+        addExcludeRetracted(filters);
 
         if (personal) {
             filters.add(OpenSearchQueryHelper.termQuery("owner", scope.getRequestor().toBareJID()));
@@ -193,7 +196,7 @@ public final class MessageSearchService {
     }
 
     private static void addTextFilters(final List<Query> filters, final SearchRequest request) {
-        if (request.getFreeText() != null && !request.getFreeText().isBlank()) {
+        if (!request.getFreeText().isBlank()) {
             filters.add(OpenSearchQueryHelper.matchText("body", request.getFreeText()));
         }
         for (final String phrase : request.getPhrases()) {
@@ -251,17 +254,9 @@ public final class MessageSearchService {
 
         final JID archive;
         final SearchHit.Source hitSource;
-        final String senderBare = OpenSearchQueryHelper.parseStringField(source, "senderBare");
-        JID from = null;
-        try {
-            if (senderBare != null) {
-                from = new JID(senderBare);
-            }
-        } catch (IllegalArgumentException ignored) {
-            from = null;
-        }
-
-        String snippet = null;
+        // Prefer indexed body so XEP-0308 corrections (OpenSearch-only) show in snippets.
+        final String snippet = snippetOf(OpenSearchQueryHelper.parseStringField(source, "body"));
+        JID from = parseJid(OpenSearchQueryHelper.parseStringField(source, "senderBare"));
         if (personal) {
             archive = requestor;
             hitSource = SearchHit.Source.personal;
@@ -269,37 +264,20 @@ public final class MessageSearchService {
             if (message == null) {
                 return null;
             }
-            snippet = snippetOf(message.getBody());
-            if (from == null && message.getDirection() == ArchivedMessage.Direction.from) {
-                from = message.getWith();
-            } else if (from == null) {
-                from = requestor;
+            if (from == null) {
+                from = message.getDirection() == ArchivedMessage.Direction.from ? message.getWith() : requestor;
             }
         } else {
             final String room = OpenSearchQueryHelper.parseStringField(source, "room");
             if (room == null) {
                 return null;
             }
-            try {
-                archive = new JID(room);
-            } catch (IllegalArgumentException e) {
+            archive = parseJid(room);
+            if (archive == null) {
                 return null;
             }
             hitSource = SearchHit.Source.room_messages;
-            final MUCRoom mucRoom = lookupRoom(archive);
-            if (mucRoom == null) {
-                snippet = snippetOf(OpenSearchQueryHelper.parseStringField(source, "body"));
-            } else {
-                final ArchivedMessage message = MucMamPersistenceManager.getArchivedMessage(messageId, mucRoom);
-                if (message != null) {
-                    snippet = snippetOf(message.getBody());
-                    if (from == null) {
-                        from = message.getWith();
-                    }
-                } else {
-                    snippet = snippetOf(OpenSearchQueryHelper.parseStringField(source, "body"));
-                }
-            }
+            from = fillFromRoomArchive(from, archive, messageId);
         }
 
         return new SearchHit(
@@ -324,43 +302,52 @@ public final class MessageSearchService {
             return null;
         }
         final long messageId = messageIdOpt.getAsLong();
-        final long roomId = roomIdOpt.getAsLong();
         final long logTime = logTimeOpt.getAsLong();
-        final JID archive = scope.roomJidForId(roomId);
+        final JID archive = scope.roomJidForId(roomIdOpt.getAsLong());
         if (archive == null) {
             return null;
         }
-        final String senderBare = OpenSearchQueryHelper.parseStringField(source, "senderBare");
-        JID from = null;
-        try {
-            if (senderBare != null) {
-                from = new JID(senderBare);
-            }
-        } catch (IllegalArgumentException ignored) {
-            from = null;
-        }
-        String snippet = snippetOf(OpenSearchQueryHelper.parseStringField(source, "body"));
-        final MUCRoom room = lookupRoom(archive);
-        if (room != null) {
-            final ArchivedMessage message = MucMamPersistenceManager.getArchivedMessage(messageId, room);
-            if (message != null) {
-                snippet = snippetOf(message.getBody());
-                if (from == null) {
-                    from = message.getWith();
-                }
-            }
-        }
+        final JID from = fillFromRoomArchive(
+            parseJid(OpenSearchQueryHelper.parseStringField(source, "senderBare")),
+            archive,
+            messageId
+        );
         return new SearchHit(
             Long.toString(messageId),
             SearchRequest.ResultType.messages,
             archive,
             from,
             Instant.ofEpochMilli(logTime),
-            snippet,
+            snippetOf(OpenSearchQueryHelper.parseStringField(source, "body")),
             SearchHit.Source.muc_log,
             messageId,
             logTime
         );
+    }
+
+    @Nullable
+    private static JID parseJid(@Nullable final String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return new JID(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private static JID fillFromRoomArchive(@Nullable final JID from, @Nonnull final JID archive, final long messageId) {
+        if (from != null) {
+            return from;
+        }
+        final MUCRoom room = lookupRoom(archive);
+        if (room == null) {
+            return null;
+        }
+        final ArchivedMessage message = MucMamPersistenceManager.getArchivedMessage(messageId, room);
+        return message != null ? message.getWith() : null;
     }
 
     @Nullable
@@ -382,6 +369,13 @@ public final class MessageSearchService {
         if (!mustNot.isEmpty()) {
             filters.add(Query.of(q -> q.bool(b -> b.mustNot(mustNot))));
         }
+    }
+
+    /** Drop XEP-0424 tombstones that may still exist with an empty body. */
+    private static void addExcludeRetracted(final List<Query> filters) {
+        filters.add(Query.of(q -> q.bool(b -> b.mustNot(
+            Query.of(mq -> mq.term(t -> t.field("retracted").value(FieldValue.of(true))))
+        ))));
     }
 
     static List<SearchHit> filterByCursor(final List<SearchHit> hits, final SearchRequest request) {

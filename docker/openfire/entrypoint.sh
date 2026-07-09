@@ -47,10 +47,17 @@ initialize_log_dir() {
 }
 
 copy_provided_plugins() {
+  # Always overwrite image-provided plugins so `docker compose build` + restart
+  # picks up a newer monitoring.jar even when the data volume already has one.
+  # (cp --update=none previously left a stale jar in place forever.)
   for file in /opt/plugins/*.jar; do
     if [ -f "$file" ]; then
-      echo "Copying user-provided plugin: $file"
-      cp --update=none "$file" "${OPENFIRE_DIR}/plugins/"
+      local base
+      base="$(basename "$file")"
+      echo "Installing image-provided plugin: ${base}"
+      cp -f "$file" "${OPENFIRE_DIR}/plugins/${base}"
+      # Force Openfire to re-extract the plugin on next start.
+      rm -rf "${OPENFIRE_DIR}/plugins/${base%.jar}"
     fi
   done
 }

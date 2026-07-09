@@ -176,10 +176,15 @@ export async function seedArchiveFixture(admin) {
 }
 
 let sharedContext;
+let stackReady;
 
-export async function getSharedContext() {
-  if (sharedContext) {
-    return sharedContext;
+/**
+ * Bring up docker (unless skipped), wait for admin/OpenSearch/XMPP, ensure users.
+ * Does not seed the IM-search archive fixture.
+ */
+export async function ensureStackReady() {
+  if (stackReady) {
+    return stackReady;
   }
   console.log(
     `E2E setup: admin=${config.adminUrl} xmpp=${config.xmppHost}:${config.xmppPort} opensearch=${config.opensearchUrl}`,
@@ -200,6 +205,15 @@ export async function getSharedContext() {
     },
     { timeoutMs: config.startupTimeoutMs, intervalMs: 5_000, label: `OpenFire XMPP c2s on ${config.xmppHost}:${config.xmppPort}` },
   );
+  stackReady = { admin };
+  return stackReady;
+}
+
+export async function getSharedContext() {
+  if (sharedContext) {
+    return sharedContext;
+  }
+  const { admin } = await ensureStackReady();
   const fixture = await seedArchiveFixture(admin);
   sharedContext = { admin, ...fixture };
   return sharedContext;

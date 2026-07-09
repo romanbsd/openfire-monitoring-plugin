@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Jive Software. All rights reserved.
+ * Copyright (C) 2008 Jive Software, 2026 Ignite Realtime Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.jivesoftware.openfire.archive;
 
+import com.reucon.openfire.plugin.archive.util.MessageEditUtil;
 import org.jivesoftware.openfire.cluster.ClusterManager;
 import org.jivesoftware.openfire.interceptor.InterceptorManager;
 import org.jivesoftware.openfire.interceptor.PacketInterceptor;
@@ -62,10 +63,10 @@ public class ArchiveInterceptor implements PacketInterceptor {
             if (!incoming) {
                 return;
             }
-            // Ignore any messages that don't have a body so that we skip events.
+            // Ignore messages without a body unless they are XEP-0308/0424 edits (body-less retracts).
             // Note: XHTML messages should always include a body so we should be ok. It's
             // possible that we may need special XHTML filtering in the future, however.
-            if (message.getBody() != null) {
+            if (message.getBody() != null || MessageEditUtil.isMessageEdit(message)) {
                 // Only process messages that are between two users, group chat rooms, or gateways.
                 if (conversationManager.isConversation(message)) {
                     //take care on blocklist
@@ -86,10 +87,11 @@ public class ArchiveInterceptor implements PacketInterceptor {
                         JID sender = message.getFrom();
                         JID receiver = message.getTo();
                         ConversationEventsQueue eventsQueue = conversationManager.getConversationEventsQueue();
+                        final boolean archiveContent = conversationManager.isMessageArchivingEnabled();
                         eventsQueue.addChatEvent(conversationManager.getConversationKey(sender, receiver),
                                 ConversationEvent.chatMessageReceived(sender, receiver,
-                                        conversationManager.isMessageArchivingEnabled() ? message.getBody() : null,
-                                        conversationManager.isMessageArchivingEnabled() ? message.toXML() : null,
+                                        archiveContent ? message.getBody() : null,
+                                        archiveContent || MessageEditUtil.isMessageEdit(message) ? message.toXML() : null,
                                         new Date()));
                     }
                 }

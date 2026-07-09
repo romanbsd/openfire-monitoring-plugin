@@ -8,7 +8,7 @@ JavaScript end-to-end tests for `urn:xmpp:im:search:0` against the Docker Compos
 ./e2e/run.sh
 ```
 
-This starts OpenFire + OpenSearch (on non-default host ports to avoid clashes with other local XMPP servers) and runs 19 search scenarios: disco, capabilities, free-text, modifiers, pagination, inactive-room authz, indexing regressions, errors, and authorization.
+This starts OpenFire + OpenSearch (on non-default host ports to avoid clashes with other local XMPP servers) and runs IM search scenarios (disco, capabilities, free-text, modifiers, pagination, inactive-room authz, indexing regressions, errors, authorization) plus XEP-0308/0424 OpenSearch index mutation checks (correction updates body; retraction deletes docs — verified via the OpenSearch HTTP API).
 
 ## Manual run (stack already up)
 
@@ -73,6 +73,12 @@ docker compose build openfire && docker compose up -d openfire
 ```
 
 Or run `./e2e/run.sh` (without `--no-up`) to build and start the stack in one step.
+
+The entrypoint always overwrites `/var/lib/openfire/plugins/monitoring.jar` from the image and removes the extracted `monitoring/` directory so Openfire reloads the new plugin. If an old jar is somehow stuck, force it:
+
+```bash
+docker compose up -d --force-recreate openfire
+```
 
 ```bash
 docker exec openfire-monitoring-plugin-openfire-1 grep opensearch /var/lib/openfire/conf/openfire.xml

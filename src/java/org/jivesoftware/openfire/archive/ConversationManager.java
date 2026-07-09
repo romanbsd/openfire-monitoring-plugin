@@ -38,12 +38,15 @@ import org.jivesoftware.openfire.stats.Statistic;
 import org.jivesoftware.openfire.stats.StatisticsManager;
 import org.jivesoftware.util.*;
 import org.jivesoftware.util.cache.CacheFactory;
+import com.reucon.openfire.plugin.archive.impl.MessageIndexer;
+import com.reucon.openfire.plugin.archive.util.MessageEditUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.JID;
 import org.xmpp.packet.Message;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -794,6 +797,7 @@ public class ConversationManager implements ComponentEventListener{
                     messageArchiver.archive(new ArchivedMessage(conversation.getConversationID(), sender, receiver, date, body, stanza, false, null) );
                 }
             }
+            applySearchIndexEdit(sender, receiver, stanza);
             // Notify listeners of the conversation update.
             for (ConversationListener listener : conversationListeners) {
                 listener.conversationUpdated(conversation, date);
@@ -860,12 +864,65 @@ public class ConversationManager implements ComponentEventListener{
                     messageArchiver.archive( new ArchivedMessage(conversation.getConversationID(), sender, jid, date, body, roomArchivingStanzasEnabled ? stanza : "", false, receiverIfPM));
                 }
             }
+            applySearchIndexEditForRoom(roomJID, stanza);
             // Notify listeners of the conversation update.
             for (ConversationListener listener : conversationListeners) {
                 listener.conversationUpdated(conversation, date);
             }
 
             Log.trace("Done processing room {} message from date {}.", roomJID, date );
+        }
+    }
+
+    private void applySearchIndexEdit(final JID sender, final JID receiver, final String stanzaXml) {
+        final Message message = parseArchivedStanza(stanzaXml);
+        final MessageIndexer indexer = messageIndexerFor(message);
+        if (indexer == null) {
+            return;
+        }
+        final String referencedId = MessageEditUtil.getReferencedId(message);
+        if (referencedId == null) {
+            return;
+        }
+        Long targetId = null;
+        if (XMPPServer.getInstance().isLocal(sender)) {
+            targetId = getMessageIdForReferencedId(sender.asBareJID(), referencedId);
+        }
+        if (targetId == null && XMPPServer.getInstance().isLocal(receiver)) {
+            targetId = getMessageIdForReferencedId(receiver.asBareJID(), referencedId);
+        }
+        if (targetId != null) {
+            indexer.applyEditForMessageId(targetId, message);
+        }
+    }
+
+    private void applySearchIndexEditForRoom(final JID roomJID, final String stanzaXml) {
+        final Message message = parseArchivedStanza(stanzaXml);
+        final MessageIndexer indexer = messageIndexerFor(message);
+        if (indexer != null) {
+            indexer.applyMessageEdit(roomJID.asBareJID(), message);
+        }
+    }
+
+    @Nullable
+    private static MessageIndexer messageIndexerFor(@Nullable final Message message) {
+        if (message == null || !MessageEditUtil.isMessageEdit(message)) {
+            return null;
+        }
+        final MonitoringPlugin plugin = MonitoringPlugin.getInstance();
+        return plugin == null ? null : plugin.getMessageIndexer();
+    }
+
+    @Nullable
+    private static Message parseArchivedStanza(final String stanzaXml) {
+        if (stanzaXml == null || stanzaXml.isEmpty()) {
+            return null;
+        }
+        try {
+            final Document doc = DocumentHelper.parseText(stanzaXml);
+            return new Message(doc.getRootElement());
+        } catch (DocumentException | IllegalArgumentException e) {
+            return null;
         }
     }
 
@@ -1108,7 +1165,7 @@ public class ConversationManager implements ComponentEventListener{
                     final Document doc = DocumentHelper.parseText( stanza );
                     final Message message = new Message( doc.getRootElement() );
                     final String sid = StanzaIDUtil.findFirstUniqueAndStableStanzaID( message, owner.toBareJID() );
-                    if ( sid != null ) {
+                    if ( sid != null && sid.equals( value ) ) {
                         Log.debug( "Found stable/unique stanza ID {} in message with ID {}.", value, messageId );
                         return messageId;
                     }
@@ -1137,6 +1194,70 @@ public class ConversationManager implements ComponentEventListener{
             Log.debug( "Fallback failed: value cannot be parsed as the old database identifier." );
             throw new IllegalArgumentException( "Unable to parse value '" + value + "' as a database identifier." );
         }
+    }
+
+    /**
+     * Returns the database identifier of a message referenced by a client message {@code @id}
+     * or an archive-owner XEP-0359 stanza-id (used by XEP-0308 / XEP-0424).
+     *
+     * @param owner The archive owner (personal bare JID or MUC room bare JID).
+     * @param value The referenced id (cannot be null or empty).
+     * @return A message ID, or {@code null} if no match was found.
+     */
+    public static Long getMessageIdForReferencedId( final JID owner, final String value )
+    {
+        if ( owner == null || value == null || value.isEmpty() ) {
+            return null;
+        }
+        Log.debug( "Looking for ID of the message referenced by id {}", value );
+
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try
+        {
+            connection = DbConnectionManager.getConnection();
+            pstmt = connection.prepareStatement(
+                "SELECT messageId, stanza FROM ofMessageArchive WHERE messageId IS NOT NULL AND (fromJID = ? OR toJID = ?) AND stanza LIKE ? ESCAPE '\\'"
+            );
+            pstmt.setString( 1, owner.toBareJID() );
+            pstmt.setString( 2, owner.toBareJID() );
+            pstmt.setString( 3, MessageEditUtil.sqlLikeContains( value ) );
+
+            rs = pstmt.executeQuery();
+            while ( rs.next() ) {
+                final Long messageId = rs.getLong( "messageId" );
+                final String stanza = rs.getString( "stanza" );
+                if ( stanza == null || stanza.isEmpty() ) {
+                    continue;
+                }
+                Log.trace( "Iterating over message with ID {}.", messageId );
+                try
+                {
+                    final Document doc = DocumentHelper.parseText( stanza );
+                    final Message message = new Message( doc.getRootElement() );
+                    if ( MessageEditUtil.stanzaMatchesReferencedId( message, value, owner.toBareJID() ) ) {
+                        Log.debug( "Found referenced id {} in message with ID {}.", value, messageId );
+                        return messageId;
+                    }
+                }
+                catch ( DocumentException | IllegalArgumentException e )
+                {
+                    Log.warn( "An exception occurred while trying to parse referenced id from message with database id {}.", messageId );
+                }
+            }
+        }
+        catch ( SQLException e )
+        {
+            Log.warn( "An exception occurred while trying to determine the message ID for referenced id '{}'.", value, e );
+        }
+        finally
+        {
+            DbConnectionManager.closeConnection( rs, pstmt, connection );
+        }
+
+        Log.debug( "Unable to find ID of the message referenced by id {}", value );
+        return null;
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package org.jivesoftware.openfire.archive;
 
+import com.reucon.openfire.plugin.archive.util.MessageEditUtil;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.cluster.ClusterManager;
 import org.jivesoftware.openfire.muc.MUCEventDispatcher;
@@ -164,6 +165,7 @@ public class GroupConversationInterceptor implements MUCEventListener {
                             conversationManager.getRoomsArchived().contains(roomJID.getNode()));
 
             ConversationEventsQueue eventsQueue = conversationManager.getConversationEventsQueue();
+            // Always forward stanza XML so body-less XEP-0424 retracts can update the search index.
             eventsQueue.addGroupChatEvent(conversationManager.getRoomConversationKey(roomJID),
                     ConversationEvent.roomMessageReceived(roomJID, user, null, nickname, withBody ? message.getBody() : null, message.toXML(), now));
         }
@@ -171,7 +173,7 @@ public class GroupConversationInterceptor implements MUCEventListener {
 
     @Override
     public void privateMessageRecieved(JID toJID, JID fromJID, Message message) {
-        if(message.getBody() != null) {
+        if (message.getBody() != null || MessageEditUtil.isMessageEdit(message)) {
             final JID roomJID = message.getFrom().asBareJID();
             final String senderNickname = message.getFrom().getResource();
             final Date now = new Date();
@@ -188,20 +190,22 @@ public class GroupConversationInterceptor implements MUCEventListener {
             }
             else {
                 ConversationEventsQueue eventsQueue = conversationManager.getConversationEventsQueue();
+                final boolean archiveContent = conversationManager.isMessageArchivingEnabled();
+                final String stanzaXml = archiveContent || MessageEditUtil.isMessageEdit(message) ? message.toXML() : null;
 
                 if (PM_IN_PERSONAL_ARCHIVE.getValue()) {
                     eventsQueue.addChatEvent(
                         conversationManager.getConversationKey(fromJID, toJID),
                         ConversationEvent.chatMessageReceived(toJID, fromJID,
-                            conversationManager.isMessageArchivingEnabled() ? message.getBody() : null,
-                            conversationManager.isMessageArchivingEnabled() ? message.toXML() : null,
+                            archiveContent ? message.getBody() : null,
+                            stanzaXml,
                             now));
                 }
 
                 if (PM_IN_ROOM_ARCHIVE.getValue()) {
                     eventsQueue.addGroupChatEvent(
                         conversationManager.getRoomConversationKey(roomJID),
-                        ConversationEvent.roomMessageReceived(roomJID, fromJID, toJID, senderNickname, conversationManager.isMessageArchivingEnabled() ? message.getBody() : null, message.toXML(), now));
+                        ConversationEvent.roomMessageReceived(roomJID, fromJID, toJID, senderNickname, archiveContent ? message.getBody() : null, stanzaXml, now));
                 }
              }
         }

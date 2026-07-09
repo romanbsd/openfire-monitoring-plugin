@@ -40,11 +40,58 @@ export async function disconnectXmpp(xmpp) {
   }
 }
 
-export async function sendChatMessage(xmpp, toBareJid, body, type = 'chat') {
+export async function sendChatMessage(xmpp, toBareJid, body, type = 'chat', { id } = {}) {
+  const attrs = { to: toBareJid, type };
+  if (id) {
+    attrs.id = id;
+  }
   await xmpp.send(
-    xml('message', { to: toBareJid, type }, xml('body', {}, body)),
+    xml('message', attrs, xml('body', {}, body)),
   );
   await sleep(300);
+}
+
+/**
+ * XEP-0308 last message correction.
+ * @returns {string} the correction stanza id
+ */
+export async function sendChatCorrection(xmpp, toBareJid, replaceId, body, type = 'chat') {
+  const id = `correct-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await xmpp.send(
+    xml(
+      'message',
+      { to: toBareJid, type, id },
+      xml('body', {}, body),
+      xml('replace', { xmlns: 'urn:xmpp:message-correct:0', id: replaceId }),
+    ),
+  );
+  await sleep(300);
+  return id;
+}
+
+/**
+ * XEP-0424 message retraction.
+ * @param {object} [opts]
+ * @param {string} [opts.body] optional fallback body (archived by SQL if present)
+ * @param {boolean} [opts.withFallbackHint] include XEP-0428 fallback marker
+ */
+export async function sendChatRetraction(xmpp, toBareJid, retractId, type = 'chat', opts = {}) {
+  const id = `retract-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const children = [
+    xml('retract', { xmlns: 'urn:xmpp:message-retract:1', id: retractId }),
+  ];
+  if (opts.body) {
+    if (opts.withFallbackHint !== false) {
+      children.push(xml('fallback', { xmlns: 'urn:xmpp:fallback:0', for: 'urn:xmpp:message-retract:1' }));
+    }
+    children.push(xml('body', {}, opts.body));
+  }
+  children.push(xml('store', { xmlns: 'urn:xmpp:hints' }));
+  await xmpp.send(
+    xml('message', { to: toBareJid, type, id }, ...children),
+  );
+  await sleep(300);
+  return id;
 }
 
 export async function joinMuc(xmpp, roomBareJid, nick) {

@@ -15,17 +15,24 @@
  */
 package com.reucon.openfire.plugin.archive.impl;
 
+import com.reucon.openfire.plugin.archive.util.MessageEditUtil;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.archive.ConversationManager;
+import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.openfire.muc.MultiUserChatService;
 import org.jivesoftware.openfire.index.OpenSearchClientHolder;
 import org.jivesoftware.openfire.index.OpenSearchIndexer;
 import org.jivesoftware.openfire.reporting.util.TaskEngine;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.xmpp.packet.JID;
+import org.xmpp.packet.Message;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Creates and maintains an OpenSearch index for archived messages.
@@ -49,14 +57,26 @@ public class MessageIndexer extends OpenSearchIndexer
     public static final int SCHEMA_VERSION = 1;
     private static final String INDEX_SUFFIX = "messages";
 
-    public static final String ALL_MESSAGES = "SELECT fromJID, fromJIDResource, toJID, toJIDResource, sentDate, body, messageID, isPMforJID "
+    public static final String ALL_MESSAGES = "SELECT fromJID, fromJIDResource, toJID, toJIDResource, sentDate, body, messageID, isPMforJID, stanza "
         + "FROM ofMessageArchive "
-        + "WHERE body IS NOT NULL "
-        + "AND messageID IS NOT NULL";
+        + "WHERE messageID IS NOT NULL "
+        + "AND (body IS NOT NULL OR (stanza IS NOT NULL AND stanza <> '')) "
+        + "ORDER BY sentDate ASC, messageID ASC";
 
-    public static final String NEW_MESSAGES = ALL_MESSAGES + " AND sentDate > ?";
+    public static final String NEW_MESSAGES = "SELECT fromJID, fromJIDResource, toJID, toJIDResource, sentDate, body, messageID, isPMforJID, stanza "
+        + "FROM ofMessageArchive "
+        + "WHERE messageID IS NOT NULL "
+        + "AND (body IS NOT NULL OR (stanza IS NOT NULL AND stanza <> '')) "
+        + "AND sentDate > ? "
+        + "ORDER BY sentDate ASC, messageID ASC";
 
     private final ConversationManager conversationManager;
+
+    /**
+     * Live corrections/retractions that may race ahead of the periodic indexer.
+     * Keyed by messageID; applied when that message is later bulk-indexed.
+     */
+    private final ConcurrentHashMap<Long, PendingEdit> pendingEdits = new ConcurrentHashMap<>();
 
     public MessageIndexer(final TaskEngine taskEngine, final ConversationManager conversationManager)
     {
@@ -90,6 +110,52 @@ public class MessageIndexer extends OpenSearchIndexer
         final Instant newestDate = indexMessages(Instant.EPOCH);
         Log.debug("... finished indexing messages to rebuild the OpenSearch index. Last indexed message date {}", newestDate);
         return newestDate;
+    }
+
+    /**
+     * Applies XEP-0308 / XEP-0424 effects for a live archived edit, resolving the target by archive owner.
+     */
+    public void applyMessageEdit(@Nonnull final JID archiveOwner, @Nonnull final Message message) {
+        final Long targetId = resolveTarget(archiveOwner, message);
+        if (targetId != null) {
+            applyEditForMessageId(targetId, message);
+        }
+    }
+
+    /**
+     * Applies a correction/retraction when the target {@code messageID} is already known
+     * (one OpenSearch mutation; personal mirrors share the same messageID).
+     */
+    public void applyEditForMessageId(final long messageID, @Nonnull final Message message) {
+        if (!isSearchEnabled()) {
+            return;
+        }
+        final boolean retract = MessageEditUtil.isRetraction(message);
+        if (!retract && !MessageEditUtil.isCorrection(message)) {
+            return;
+        }
+        final String body = retract ? null : (message.getBody() == null ? "" : message.getBody());
+        final long stamp = Instant.now().toEpochMilli();
+        // Remember before OpenSearch write so a concurrent bulk index cannot recreate the old body
+        // when update_by_query matches 0 docs (original not indexed yet).
+        pendingEdits.merge(messageID, new PendingEdit(body, stamp), (a, b) -> b.stamp >= a.stamp ? b : a);
+
+        final OpenSearchClient client = getClient();
+        if (client == null) {
+            return;
+        }
+        try {
+            OpenSearchClientHolder.updateContentByQuery(
+                client,
+                getIndexName(),
+                termMessageIdQuery(messageID),
+                body == null ? "" : body,
+                retract,
+                stamp
+            );
+        } catch (IOException e) {
+            Log.warn("Failed to mutate OpenSearch docs for messageID {}.", messageID, e);
+        }
     }
 
     private Instant indexMessages(final Instant since) throws IOException {
@@ -147,15 +213,36 @@ public class MessageIndexer extends OpenSearchIndexer
                 }
                 final Instant sentDate = Instant.ofEpochMilli(Long.parseLong(rs.getString("sentDate")));
                 final String body = DbConnectionManager.getLargeTextField(rs, 6);
+                final String stanzaXml = DbConnectionManager.getLargeTextField(rs, 9);
+
+                final Message editMessage = parseMessage(stanzaXml);
+                if (editMessage != null && MessageEditUtil.isMessageEdit(editMessage)) {
+                    OpenSearchClientHolder.bulkIndex(client, getIndexName(), batch);
+                    batch.clear();
+
+                    final JID toBare = toJID.asBareJID();
+                    Long targetId = resolveTarget(isMucRoomAddress(toBare) ? toBare : fromJID.asBareJID(), editMessage);
+                    if (targetId == null && !isMucRoomAddress(toBare) && XMPPServer.getInstance().isLocal(toJID)) {
+                        targetId = resolveTarget(toJID.asBareJID(), editMessage);
+                    }
+                    if (targetId != null) {
+                        applyEditForMessageId(targetId, editMessage);
+                    }
+                    if (sentDate.isAfter(latest)) {
+                        latest = sentDate;
+                    }
+                    ++progress;
+                    continue;
+                }
+
                 if (body == null) {
                     continue;
                 }
 
                 final JID toBare = toJID.asBareJID();
                 if (isMucRoomAddress(toBare)) {
-                    final JID room = toBare;
                     final JID pmFromJID = isPMforJID != null ? fromJID.asBareJID() : null;
-                    batch.add(buildBulkOperation(createMUCDocument(room, messageID, fromJID, pmFromJID, isPMforJID, sentDate, body), room.toBareJID() + "-" + messageID + "-room"));
+                    batch.add(buildBulkOperation(createMUCDocument(toBare, messageID, fromJID, pmFromJID, isPMforJID, sentDate, body), toBare.toBareJID() + "-" + messageID + "-room"));
                     flushBatchIfNeeded(client, batch);
 
                     // Only private MUC messages belong in a user's personal archive index.
@@ -195,6 +282,41 @@ public class MessageIndexer extends OpenSearchIndexer
         return latest;
     }
 
+    @Nullable
+    private Long resolveTarget(@Nonnull final JID archiveOwner, @Nonnull final Message editMessage) {
+        final String referencedId = MessageEditUtil.getReferencedId(editMessage);
+        if (referencedId == null) {
+            return null;
+        }
+        if (isMucRoomAddress(archiveOwner.asBareJID())) {
+            final MultiUserChatService service = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(archiveOwner);
+            if (service != null) {
+                final MUCRoom room = service.getChatRoom(archiveOwner.getNode());
+                if (room != null) {
+                    return MucMamPersistenceManager.getMessageIdForReferencedId(room, referencedId);
+                }
+            }
+        }
+        return ConversationManager.getMessageIdForReferencedId(archiveOwner.asBareJID(), referencedId);
+    }
+
+    @Nullable
+    private static Message parseMessage(@Nullable final String stanzaXml) {
+        if (stanzaXml == null || stanzaXml.isEmpty()) {
+            return null;
+        }
+        try {
+            final Document doc = DocumentHelper.parseText(stanzaXml);
+            return new Message(doc.getRootElement());
+        } catch (DocumentException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static Query termMessageIdQuery(final long messageID) {
+        return Query.of(q -> q.term(t -> t.field("messageID").value(FieldValue.of(messageID))));
+    }
+
     private static boolean isMucRoomAddress(@Nonnull final JID jid) {
         final JID bare = jid.asBareJID();
         if (XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(bare) != null) {
@@ -217,8 +339,34 @@ public class MessageIndexer extends OpenSearchIndexer
     }
 
     private BulkOperation buildBulkOperation(final Map<String, Object> document, final String id) {
+        applyPendingEdit(document);
         return BulkOperation.of(op -> op.index(idx -> idx.index(getIndexName()).id(id).document(document)));
     }
+
+    private void applyPendingEdit(final Map<String, Object> document) {
+        final Object rawId = document.get("messageID");
+        if (!(rawId instanceof Number number)) {
+            return;
+        }
+        final PendingEdit edit = pendingEdits.get(number.longValue());
+        if (edit == null) {
+            return;
+        }
+        final long docStamp = ((Number) document.getOrDefault("contentStamp", 0L)).longValue();
+        if (edit.stamp < docStamp) {
+            return;
+        }
+        if (edit.body == null) {
+            document.put("body", "");
+            document.put("retracted", true);
+        } else {
+            document.put("body", edit.body);
+            document.put("retracted", false);
+        }
+        document.put("contentStamp", edit.stamp);
+    }
+
+    private record PendingEdit(@Nullable String body, long stamp) {}
 
     private static Map<String, Object> createPersonalDocument(
         @Nonnull final JID owner,
@@ -229,17 +377,12 @@ public class MessageIndexer extends OpenSearchIndexer
         @Nonnull final String body)
     {
         final JID with = owner.asBareJID().equals(fromJID.asBareJID()) ? toJID : fromJID;
-        final Map<String, Object> document = new HashMap<>();
-        document.put("messageID", messageID);
-        document.put("messageIDRange", messageID);
+        final Map<String, Object> document = baseMessageDocument(messageID, fromJID, sentDate, body);
         document.put("owner", owner.toBareJID());
         document.put("withBare", with.toBareJID());
         if (with.getResource() != null) {
             document.put("withResource", with.getResource());
         }
-        putSenderFields(document, fromJID);
-        document.put("sentDate", sentDate.toEpochMilli());
-        document.put("body", body);
         return document;
     }
 
@@ -252,9 +395,7 @@ public class MessageIndexer extends OpenSearchIndexer
         @Nonnull final Instant sentDate,
         @Nonnull final String body)
     {
-        final Map<String, Object> document = new HashMap<>();
-        document.put("messageID", messageID);
-        document.put("messageIDRange", messageID);
+        final Map<String, Object> document = baseMessageDocument(messageID, fromJID, sentDate, body);
         document.put("room", owner.toBareJID());
         document.put("isPrivateMessage", Boolean.toString(pmFromJID != null || pmToJID != null));
         if (pmFromJID != null) {
@@ -263,17 +404,27 @@ public class MessageIndexer extends OpenSearchIndexer
         if (pmToJID != null) {
             document.put("pmToJID", pmToJID.toBareJID());
         }
-        putSenderFields(document, fromJID);
-        document.put("sentDate", sentDate.toEpochMilli());
-        document.put("body", body);
         return document;
     }
 
-    private static void putSenderFields(final Map<String, Object> document, @Nonnull final JID fromJID) {
+    private static Map<String, Object> baseMessageDocument(
+        final long messageID,
+        @Nonnull final JID fromJID,
+        @Nonnull final Instant sentDate,
+        @Nonnull final String body)
+    {
+        final Map<String, Object> document = new HashMap<>();
+        document.put("messageID", messageID);
+        document.put("messageIDRange", messageID);
         document.put("senderBare", fromJID.toBareJID());
         if (fromJID.getResource() != null) {
             document.put("senderResource", fromJID.getResource());
         }
+        document.put("sentDate", sentDate.toEpochMilli());
+        document.put("contentStamp", sentDate.toEpochMilli());
+        document.put("retracted", false);
+        document.put("body", body);
+        return document;
     }
 
     private static Map<String, Object> messageMappings() {
@@ -290,6 +441,8 @@ public class MessageIndexer extends OpenSearchIndexer
         mappings.put("senderBare", "{\"type\":\"keyword\"}");
         mappings.put("senderResource", "{\"type\":\"keyword\"}");
         mappings.put("sentDate", "{\"type\":\"long\"}");
+        mappings.put("contentStamp", "{\"type\":\"long\"}");
+        mappings.put("retracted", "{\"type\":\"boolean\"}");
         mappings.put("body", "{\"type\":\"text\"}");
         return mappings;
     }

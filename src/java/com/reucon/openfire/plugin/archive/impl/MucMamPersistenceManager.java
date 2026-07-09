@@ -2,6 +2,7 @@ package com.reucon.openfire.plugin.archive.impl;
 
 import com.reucon.openfire.plugin.archive.PersistenceManager;
 import com.reucon.openfire.plugin.archive.model.ArchivedMessage;
+import com.reucon.openfire.plugin.archive.util.MessageEditUtil;
 import com.reucon.openfire.plugin.archive.xep0059.XmppResultSet;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -130,8 +131,8 @@ public class MucMamPersistenceManager implements PersistenceManager {
         xmppResultSet.setCount(totalCount);
 
         if ( !msgs.isEmpty() ) {
-            final ArchivedMessage firstMessage = msgs.get(0);
-            final ArchivedMessage lastMessage = msgs.get(msgs.size()-1);
+            final ArchivedMessage firstMessage = msgs.getFirst();
+            final ArchivedMessage lastMessage = msgs.getLast();
             final String first;
             final String last;
             if ( useStableID ) {
@@ -377,6 +378,76 @@ public class MucMamPersistenceManager implements PersistenceManager {
         }
 
         Log.debug( "Unable to find ID of the message with stable/unique stanza ID {}", value );
+        return null;
+    }
+
+    /**
+     * Returns the database identifier of a MUC message referenced by a client message {@code @id}
+     * or a room XEP-0359 stanza-id (used by XEP-0308 / XEP-0424).
+     *
+     * @param room  The MUC room archive.
+     * @param value The referenced id (cannot be null or empty).
+     * @return A message ID, or {@code null} if no match was found.
+     */
+    public static Long getMessageIdForReferencedId( final MUCRoom room, final String value )
+    {
+        if ( room == null || value == null || value.isEmpty() ) {
+            return null;
+        }
+        Log.debug( "Looking for ID of the MUC message referenced by id {}", value );
+
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try
+        {
+            connection = DbConnectionManager.getConnection();
+            if (USE_OPENFIRE_TABLES.getValue()) {
+                pstmt = connection.prepareStatement(
+                    "SELECT messageId, stanza FROM ofMucConversationLog WHERE messageId IS NOT NULL AND roomID=? AND stanza LIKE ? ESCAPE '\\'"
+                );
+                pstmt.setLong( 1, room.getID() );
+            } else {
+                pstmt = connection.prepareStatement(
+                    "SELECT messageId, stanza FROM ofMessageArchive WHERE messageID IS NOT NULL AND toJid=? AND stanza LIKE ? ESCAPE '\\'"
+                );
+                pstmt.setString( 1, room.getJID().toBareJID() );
+            }
+            pstmt.setString( 2, MessageEditUtil.sqlLikeContains( value ) );
+
+            rs = pstmt.executeQuery();
+            while ( rs.next() ) {
+                final Long messageId = rs.getLong( "messageId" );
+                final String stanza = rs.getString( "stanza" );
+                if ( stanza == null || stanza.isEmpty() ) {
+                    continue;
+                }
+                Log.trace( "Iterating over message with ID {}.", messageId );
+                try
+                {
+                    final Document doc = DocumentHelper.parseText( stanza );
+                    final Message message = new Message( doc.getRootElement() );
+                    if ( MessageEditUtil.stanzaMatchesReferencedId( message, value, room.getJID().toBareJID() ) ) {
+                        Log.debug( "Found referenced id {} in message with ID {}.", value, messageId );
+                        return messageId;
+                    }
+                }
+                catch ( DocumentException | IllegalArgumentException e )
+                {
+                    Log.warn( "An exception occurred while trying to parse referenced id from message with database id {}.", messageId );
+                }
+            }
+        }
+        catch ( SQLException e )
+        {
+            Log.warn( "An exception occurred while trying to determine the message ID for referenced id '{}'.", value, e );
+        }
+        finally
+        {
+            DbConnectionManager.closeConnection( rs, pstmt, connection );
+        }
+
+        Log.debug( "Unable to find ID of the MUC message referenced by id {}", value );
         return null;
     }
 
